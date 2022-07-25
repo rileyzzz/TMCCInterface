@@ -472,16 +472,19 @@ enum TMCCActiveState
 struct DeviceInfo
 {
 public:
-  DeviceInfo();
-  ~DeviceInfo();
+  TMCC_API DeviceInfo();
+  TMCC_API ~DeviceInfo();
 
-  inline const char* GetPortName() { return m_portName; }
-  inline const char* GetFriendlyName() { return m_friendlyName; }
-  inline const char* GetHardwareID() { return m_hardwareId; }
+  TMCC_API DeviceInfo(const DeviceInfo& other);
+  TMCC_API DeviceInfo(DeviceInfo&& other);
 
-  void SetPortName(const char* portName);
-  void SetFriendlyName(const char* friendlyName);
-  void SetHardwareID(const char* hardwareId);
+  inline const char* GetPortName() const { return m_portName; }
+  inline const char* GetFriendlyName() const { return m_friendlyName; }
+  inline const char* GetHardwareID() const { return m_hardwareId; }
+
+  TMCC_API void SetPortName(const char* portName);
+  TMCC_API void SetFriendlyName(const char* friendlyName);
+  TMCC_API void SetHardwareID(const char* hardwareId);
 
 private:
   char* m_portName;

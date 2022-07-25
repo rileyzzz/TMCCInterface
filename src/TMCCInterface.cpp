@@ -25,15 +25,36 @@ DeviceInfo::DeviceInfo()
 
 DeviceInfo::~DeviceInfo()
 {
-  free(m_portName);
-  free(m_friendlyName);
-  free(m_hardwareId);
+  if (m_portName)
+    free(m_portName);
+  if (m_friendlyName)
+    free(m_friendlyName);
+  if (m_hardwareId)
+    free(m_hardwareId);
+}
+
+DeviceInfo::DeviceInfo(const DeviceInfo& other)
+{
+  m_portName = other.m_portName ? strdup(other.m_portName) : nullptr;
+  m_friendlyName = other.m_friendlyName ? strdup(other.m_friendlyName) : nullptr;
+  m_hardwareId = other.m_hardwareId ? strdup(other.m_hardwareId) : nullptr;
+}
+
+DeviceInfo::DeviceInfo(DeviceInfo&& other)
+{
+  m_portName = other.m_portName;
+  other.m_portName = nullptr;
+  m_friendlyName = other.m_friendlyName;
+  other.m_friendlyName = nullptr;
+  m_hardwareId = other.m_hardwareId;
+  other.m_hardwareId = nullptr;
 }
 
 
 void DeviceInfo::SetPortName(const char* portName)
 {
-  free(m_portName);
+  if (m_portName)
+    free(m_portName);
   m_portName = nullptr;
 
   if (!portName)
@@ -44,7 +65,8 @@ void DeviceInfo::SetPortName(const char* portName)
 
 void DeviceInfo::SetFriendlyName(const char* friendlyName)
 {
-  free(m_friendlyName);
+  if (m_friendlyName)
+    free(m_friendlyName);
   m_friendlyName = nullptr;
 
   if (!friendlyName)
@@ -55,7 +77,8 @@ void DeviceInfo::SetFriendlyName(const char* friendlyName)
 
 void DeviceInfo::SetHardwareID(const char* hardwareId)
 {
-  free(m_hardwareId);
+  if (m_hardwareId)
+    free(m_hardwareId);
   m_hardwareId = nullptr;
 
   if (!hardwareId)
@@ -200,9 +223,6 @@ static std::vector<DeviceInfo> GetDevices()
 int TMCCInterface::EnumerateDevices(DeviceInfo** devices)
 {
   s_devices = GetDevices();
-
-  if (s_devices.size() == 0)
-    return 0;
 
   *devices = s_devices.data();
   return s_devices.size();
