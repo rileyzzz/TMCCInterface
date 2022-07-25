@@ -11,16 +11,61 @@ HANDLE serialPort;
 #endif // WINDOWS
 
 
-struct DeviceInfo
-{
-  std::string portName;
-  std::string friendlyName;
-  std::string hardwareId;
-};
 
+static std::vector<DeviceInfo> s_devices;
 static DeviceInfo* s_currentDevice;
 
-std::vector<DeviceInfo> EnumerateDevices()
+
+DeviceInfo::DeviceInfo()
+  : m_portName{nullptr}
+  , m_friendlyName{nullptr}
+  , m_hardwareId{nullptr}
+{
+}
+
+DeviceInfo::~DeviceInfo()
+{
+  free(m_portName);
+  free(m_friendlyName);
+  free(m_hardwareId);
+}
+
+
+void DeviceInfo::SetPortName(const char* portName)
+{
+  free(m_portName);
+  m_portName = nullptr;
+
+  if (!portName)
+    return;
+
+  m_portName = strdup(portName);
+}
+
+void DeviceInfo::SetFriendlyName(const char* friendlyName)
+{
+  free(m_friendlyName);
+  m_friendlyName = nullptr;
+
+  if (!friendlyName)
+    return;
+
+  m_friendlyName = strdup(friendlyName);
+}
+
+void DeviceInfo::SetHardwareID(const char* hardwareId)
+{
+  free(m_hardwareId);
+  m_hardwareId = nullptr;
+
+  if (!hardwareId)
+    return;
+
+  m_hardwareId = strdup(hardwareId);
+}
+
+
+static std::vector<DeviceInfo> GetDevices()
 {
   std::vector<DeviceInfo> devices;
 
@@ -71,12 +116,10 @@ std::vector<DeviceInfo> EnumerateDevices()
         assert(false);
         continue;
       }
-      std::string portName;
-      portName.resize(dwBytes);
 
-      //char* portName = new char[dwBytes + 1];
+      char* portName = new char[dwBytes + 1];
       DWORD dwType{ 0 };
-      nStatus = RegQueryValueEx(key, lpValueName, nullptr, &dwType, reinterpret_cast<LPBYTE>(portName.data()), &dwBytes);
+      nStatus = RegQueryValueEx(key, lpValueName, nullptr, &dwType, reinterpret_cast<LPBYTE>(portName), &dwBytes);
       if (nStatus != ERROR_SUCCESS)
       {
         //SetLastError(nStatus);
@@ -105,7 +148,8 @@ std::vector<DeviceInfo> EnumerateDevices()
       RegCloseKey(key);
 
       //printf("port name %s\n", portName.c_str());
-      device.portName = portName;
+      device.SetPortName(portName);
+      delete[] portName;
     }
 
     //SetupDiGetDeviceRegistryProperty(hDeviceInfo, &devInfoData, SPDRP_UI_NUMBER_DESC_FORMAT, nullptr, nullptr, 0, &reqSize);
@@ -134,8 +178,8 @@ std::vector<DeviceInfo> EnumerateDevices()
       }
       // use friendlyName here
 
-      device.friendlyName = std::string((char*)friendlyName);
-      device.hardwareId = std::string((char*)hardwareId);
+      device.SetFriendlyName((char*)friendlyName);
+      device.SetHardwareID((char*)hardwareId);
 
       devices.push_back(device);
       delete[] friendlyName;
@@ -153,45 +197,34 @@ std::vector<DeviceInfo> EnumerateDevices()
   return devices;
 }
 
-bool TMCCInterface::Init()
+int TMCCInterface::EnumerateDevices(DeviceInfo** devices)
 {
-  std::vector<DeviceInfo> devices = EnumerateDevices();
+  s_devices = GetDevices();
 
-  if (devices.size() == 0)
+  if (s_devices.size() == 0)
+    return 0;
+
+  *devices = s_devices.data();
+  return s_devices.size();
+}
+
+bool TMCCInterface::Init(int device)
+{
+  if (device < 0 || device >= s_devices.size())
     return false;
-  printf("Select a TMCC device:\n");
-
-  for (int i = 0; i < devices.size(); i++)
-  {
-    const DeviceInfo& device = devices[i];
-    printf("  - %d: %s [%s]\n", i, device.friendlyName.c_str(), device.hardwareId.c_str());
-  }
-
-  int targetID = -1;
-  while (targetID < 0 || targetID >= devices.size())
-  {
-    std::cin >> targetID;
-
-    // debug, no target
-    if (targetID == -1)
-      return false;
-
-    if (targetID < 0 || targetID >= devices.size())
-      printf("Invalid device!\n");
-  }
-
-  printf("Selected device %d [%s]\n", targetID, devices[targetID].friendlyName.c_str());
 
   if (s_currentDevice)
     delete s_currentDevice;
-  s_currentDevice = new DeviceInfo(devices[targetID]);
+  s_currentDevice = new DeviceInfo(s_devices[device]);
+  printf("Initialized device %d [%s]\n", device, s_devices[device].GetFriendlyName());
 
   return true;
 }
 
 void TMCCInterface::Shutdown()
 {
-  delete s_currentDevice;
+  if (s_currentDevice)
+    delete s_currentDevice;
   s_currentDevice = nullptr;
 }
 
@@ -209,7 +242,7 @@ bool TMCCInterface::WriteData(ubyte* pData, int length)
   DCB dcb;
   DWORD byteswritten;
   HANDLE hPort = CreateFile(
-    s_currentDevice->portName.c_str(),
+    s_currentDevice->GetPortName(),
     GENERIC_WRITE,
     0,
     NULL,
