@@ -272,13 +272,19 @@ bool TMCCInterface::WriteData(ubyte* pData, int length)
   );
 
   if (!GetCommState(hPort, &dcb))
+  {
+    CloseHandle(hPort);
     return false;
+  }
   dcb.BaudRate = CBR_9600; //9600 Baud
   dcb.ByteSize = 8; //8 data bits
   dcb.Parity = NOPARITY; //no parity
   dcb.StopBits = ONESTOPBIT; //1 stop
   if (!SetCommState(hPort, &dcb))
+  {
+    CloseHandle(hPort);
     return false;
+  }
   bSucceeded = WriteFile(hPort, pData, length, &byteswritten, NULL);
   CloseHandle(hPort); //close the handle
 
