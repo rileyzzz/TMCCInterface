@@ -41,6 +41,7 @@ let numericBuf = "";
 
 function updateNumeric(value) {
   numericBuf += value;
+  console.log('updated numeric to ' + numericBuf);
   $("#kp-buffer").text(numericBuf);
 }
 
@@ -84,7 +85,17 @@ $(document).ready(function () {
   });
 
   $("#kp-go").click(function (e) {
-
+    if (numericBuf.length == 0)
+      return;
+    
+    if (numericInput) {
+      let cmd = "numericCommand " + numericBuf + "\r\n";
+      socket.emit('command', cmd);
+    }
+    else {
+      let cmd = "setEngine " + numericBuf + "\r\n";
+      socket.emit('command', cmd);
+    }
   });
 
   for (let i = 0; i <= 9; i++) {

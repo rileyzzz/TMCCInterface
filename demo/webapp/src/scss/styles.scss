@@ -83,11 +83,17 @@ body {
 
 .kp-buffer-container {
     margin: 16px auto 0px auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
 }
 
-.kp-buffer {
-    margin: auto;
-    height: 32px;
+#kp-buffer {
+    // margin: auto;
+    flex-grow: 0;
+    flex-shrink: 1;
+
+    height: 44px;
     min-width: 128px;
     background-color: #0f0f0f;
     border: 1px solid white;
@@ -95,14 +101,28 @@ body {
     padding: 2px;
     font-family: Arial;
     font-size: 28px;
-    text-align: center;
+    text-align: right;
+    color: white;
+}
+
+.keypad-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin: 16px auto 0px auto;
 }
 
 .keypad {
-    display: flex;
-    flex-direction: column;
-    // width: 80%;
-    margin: 16px auto 0px auto;
+    // display: flex;
+    // flex-direction: column;
+    display: grid;
+    gap: 4px;
+    grid-template-columns: 80px 80px 80px;
+    grid-auto-rows: 80px;
+
+    // margin: 16px auto 0px auto;
+    flex-grow: 0;
+    flex-shrink: 1;
 }
 
 .kp-row {
@@ -120,11 +140,11 @@ body {
 }
 
 .kp-button {
-    width: 80px;
+    // width: 80px;
     background: #aa2504;
     border: 1px solid white;
     border-radius: 4px;
-    margin: 2px;
+    // margin: 2px;
     color: white;
     font-weight: bold;
     font-size: 22px;
@@ -141,7 +161,7 @@ body {
 
 #kp-go {
     background: #05a02e;
-    width: 160px;
+    // width: 160px;
     // flex-grow: 1;
 }
 

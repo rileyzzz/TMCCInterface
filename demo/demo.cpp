@@ -127,6 +127,16 @@ static void ProcessTMCCCommand(const char* command, const char* data)
       printf("Set legacy to %d\n", legacy);
     }
   }
+  else if (!strcmp(command, "numericCommand"))
+  {
+    int input;
+    if (sscanf(data, "%d", &input))
+    {
+      if (!s_debug)
+        TMCCInterface::EngineNumericCommand(s_engine, input);
+      printf("Numeric command %d\n", input);
+    }
+  }
   else if (!strcmp(command, "setThrottle"))
   {
     float throttle;
