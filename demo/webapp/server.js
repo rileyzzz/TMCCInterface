@@ -41,6 +41,10 @@ require('net').createServer(function (socket) {
   // socket.write('Hello 2\n');
 }).listen(tmcc_port);
 
+process.on('uncaughtException', function (err) {
+  console.error(err.stack);
+});
+
 // make a connection with the user from server side
 io.on('connection', (socket)=>{
   console.log('New user connected');

@@ -22,17 +22,20 @@ using ip::tcp;
 //
 //static void on_message(ws_server* s, websocketpp::connection_hdl hdl, message_ptr msg);
 #define PORT 8080
+#define DEBUG_DEVICE 9999
+static bool s_debug = false;
 
 static void ProcessTMCCCommand(const char* command, const char* data);
 
 int main(int argc, char* argv[])
 {
-  printf("Please select a device:\n");
+
   int deviceID;
   DeviceInfo* devices;
   int numDevices;
   do
   {
+    printf("Please select a device:\n");
     numDevices = TMCCInterface::EnumerateDevices(&devices);
     for (int i = 0; i < numDevices; i++)
     {
@@ -41,9 +44,17 @@ int main(int argc, char* argv[])
 
     if (!scanf("%d", &deviceID))
       deviceID = -1;
-  } while (deviceID < 0 || deviceID >= numDevices);
+  } while ((deviceID < 0 || deviceID >= numDevices)
+#ifdef _DEBUG
+    && deviceID != DEBUG_DEVICE
+#endif // _DEBUG
+    );
 
-  if (!TMCCInterface::Init(deviceID))
+#ifdef _DEBUG
+  s_debug = deviceID == DEBUG_DEVICE;
+#endif // DEBUG
+
+  if (!s_debug && !TMCCInterface::Init(deviceID))
   {
     printf("Failed to initialize TMCC.\n");
     return 1;
@@ -122,10 +133,14 @@ static void ProcessTMCCCommand(const char* command, const char* data)
     float throttle;
     if (sscanf(data, "%f", &throttle))
     {
-      if (s_legacy)
-        TMCCInterface::EngineSetAbsoluteSpeed(s_engine, (int)(throttle * 32.0f));
-      else
-        TMCCInterface::EngineSetAbsoluteSpeed2(s_engine, (int)(throttle * 200.0f));
+      if (!s_debug)
+      {
+        if (s_legacy)
+          TMCCInterface::EngineSetAbsoluteSpeed(s_engine, (int)(throttle * 32.0f));
+        else
+          TMCCInterface::EngineSetAbsoluteSpeed2(s_engine, (int)(throttle * 200.0f));
+      }
+      printf("Set throttle to %f\n", throttle);
     }
   }
   else if (!strcmp(command, "setBrake"))
@@ -133,8 +148,9 @@ static void ProcessTMCCCommand(const char* command, const char* data)
     float brake;
     if (sscanf(data, "%f", &brake))
     {
-      if (!s_legacy)
+      if (!s_debug && !s_legacy)
         TMCCInterface::EngineSetBrakeLevel2(s_engine, (int)(brake * 8.0f));
+      printf("Set brake to %f\n", brake);
     }
   }
   else
