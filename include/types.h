@@ -12,11 +12,11 @@
 #ifdef _MSC_VER
 #ifdef TMCC_EXPORT
 #define TMCC_API __declspec(dllexport)
-#else //!OPENTRAINZ_EXPORT
+#else //!TMCC_EXPORT
 #define TMCC_API __declspec(dllimport)
-#endif //!OPENTRAINZ_EXPORT
+#endif //!TMCC_EXPORT
 #else
-#define RD2TMCC_API
+#define TMCC_API
 #endif
 
 typedef unsigned char			  uint8;
@@ -52,19 +52,19 @@ typedef long long				    int64;
 #endif
 
 
-#ifdef WINDOWS
-#include <io.h>
-#include <windows.h>
-#define F_OK 0
-#define access _access
-#define sleep Sleep
-#else // !WIN32
-#include <unistd.h>
-#endif // !WIN32
-
-inline bool file_exists(const char* fname)
-{
-    return access(fname, F_OK) == 0;
-}
+//#ifdef WINDOWS
+//#include <io.h>
+//#include <windows.h>
+//#define F_OK 0
+//#define access _access
+//#define sleep Sleep
+//#else // !WIN32
+//#include <unistd.h>
+//#endif // !WIN32
+//
+//inline bool file_exists(const char* fname)
+//{
+//    return access(fname, F_OK) == 0;
+//}
 
 #endif // _TYPES_H_

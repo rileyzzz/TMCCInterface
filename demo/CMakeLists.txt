@@ -12,10 +12,17 @@ add_executable(Demo ${DEMO_SOURCES})
 
 
 # target_link_directories(Demo PUBLIC ${Boost_LIBRARY_DIRS})
-# target_link_libraries(Demo PUBLIC ../bin/TMCC ${Boost_LIBRARIES})
-target_link_libraries(Demo PUBLIC ../bin/TMCC)
+target_link_libraries(Demo PUBLIC ../bin/TMCC ${Boost_LIBRARIES})
+# target_link_libraries(Demo PUBLIC ../bin/TMCC)
+
+# if (WIN32)
+# target_link_libraries(Demo PUBLIC Ws2_32)
+# else()
+
+# endif()
 
 # target_include_directories(Demo PUBLIC ../include ${Boost_INCLUDE_DIRS} ${WEBSOCKETPP_INCLUDE_DIR})
-target_include_directories(Demo PUBLIC ../include)
+target_include_directories(Demo PUBLIC ../include ${Boost_INCLUDE_DIR})
+# target_include_directories(Demo PUBLIC ../include)
 
 add_dependencies(Demo TMCC)

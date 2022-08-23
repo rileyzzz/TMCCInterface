@@ -10,20 +10,7 @@ import * as bootstrap from 'bootstrap'
 import { Tooltip, Toast, Popover } from 'bootstrap'
 const { io } = require("socket.io-client");
 
-$(document).ready(function () {
 
-
-  // $("#test").click(function () {
-  //    $.post("/request",
-  //       {
-  //          name: "cool stuff",
-  //          designation: "cool 2"
-  //       },
-  //       function (data, status) {
-  //          console.log(data);
-  //       });
-  // });
- });
 
 var socket=io()
 
@@ -37,13 +24,34 @@ socket.on('newMessage', function(message){
  console.log(message);
 });
  
-// emits message from user side
-socket.emit('createMessage', {
-  to:'clientside message',
-  text:'lol'
-});
+
  
 // when disconnected from server
 socket.on('disconnect', function(){
   console.log('Disconnect from server')
+});
+
+$(document).ready(function () {
+
+
+  $("#test").click(function () {
+    //  $.post("/request",
+    //     {
+    //        name: "cool stuff",
+    //        designation: "cool 2"
+    //     },
+    //     function (data, status) {
+    //        console.log(data);
+    //     });
+
+    // emits message from user side
+    // socket.emit('createMessage', {
+    //   to:'clientside message',
+    //   text:'lol'
+    // });
+
+    let cmd = "setThrottle " + (5.0).toString() + "\r\n";
+    socket.emit('command', cmd);
+
+  });
 });

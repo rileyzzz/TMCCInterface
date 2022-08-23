@@ -19,21 +19,37 @@ let io = socketIO(server);
 server.listen(port);
 console.log(`Listening on port ${port}`);
 
+// connect to C++ app
+const tmcc_port = 8080;
+// var tmcc = require('net').Socket();
+// tmcc.connect(tmcc_port, 'localhost', () => {
+//     console.log(`Connected to TMCC on port ${tmcc_port}`);
+
+//     tmcc.write('Hello\n');
+// });
+tmcc = null;
+
+require('net').createServer(function (socket) {
+  console.log("connected");
+
+  tmcc = socket;
+  socket.on('data', function (data) {
+      console.log(data.toString());
+  });
+
+  // socket.write('Hello\n');
+  // socket.write('Hello 2\n');
+}).listen(tmcc_port);
+
 // make a connection with the user from server side
 io.on('connection', (socket)=>{
-    console.log('New user connected');
+  console.log('New user connected');
 
-  socket.emit('newMessage', {
-    from:'awesome',
-    text:'coolness',
-    createdAt:123
+  socket.on('command', (value)=>{
+    console.log('received command: ', value);
+    tmcc.write(value);
   });
 
-  // listen for message from user
-  socket.on('createMessage', (newMessage)=>{
-    console.log('newMessage', newMessage);
-  });
-  
   // when server disconnects from user
   socket.on('disconnect', ()=>{
     console.log('disconnected from user');
