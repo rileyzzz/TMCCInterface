@@ -137,4 +137,8 @@ static void ProcessTMCCCommand(const char* command, const char* data)
         TMCCInterface::EngineSetBrakeLevel2(s_engine, (int)(brake * 8.0f));
     }
   }
+  else
+  {
+    printf("Unrecognized command '%s'\n", command);
+  }
 }
