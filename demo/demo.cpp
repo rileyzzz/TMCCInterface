@@ -24,6 +24,8 @@ using ip::tcp;
 #define PORT 8080
 #define DEBUG_DEVICE 9999
 static bool s_debug = false;
+static int s_engine = 0;
+static bool s_legacy = false;
 
 static void ProcessTMCCCommand(const char* command, const char* data);
 
@@ -104,9 +106,6 @@ int main(int argc, char* argv[])
 
   TMCCInterface::Shutdown();
 }
-
-static int s_engine = 0;
-static bool s_legacy = false;
 
 static void ProcessTMCCCommand(const char* command, const char* data)
 {
