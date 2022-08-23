@@ -2,7 +2,7 @@
 project(Demo CXX)
 
 # find_package(Boost COMPONENTS date_time REQUIRED)
-# find_package(Boost REQUIRED)
+find_package(Boost REQUIRED)
 # find_package(websocketpp REQUIRED)
 
 set(DEMO_SOURCES

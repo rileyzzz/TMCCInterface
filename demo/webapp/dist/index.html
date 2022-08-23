@@ -4,12 +4,25 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <title>Bootstrap w/ Webpack</title>
   </head>
-  <body>
+  <body class="text-center bg-dark text-white">
     <div class="container py-4 px-3 mx-auto">
-      <h1>Hello, Bootstrap and Webpack!</h1>
-      <button class="btn btn-primary" id="test">Primary button</button>
+      <h1>TMCC Demo</h1>
+    </div>
+    <div class="main-content">
+      <div class="slider-box">
+        <span class="material-icons">speed</span>
+        <input type="range" min="0" max="200" value="0" class="slider" id="throttle">
+      </div>
+      <div class="center-content">
+
+      </div>
+      <div class="slider-box">
+        <span class="material-icons">do_not_disturb_on</span>
+        <input type="range" min="0" max="8" value="0" class="slider" id="brake">
+      </div>
     </div>
     <script src="./main.js"></script>
   </body>

@@ -4,10 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "webpack && node server.js",
-    "debug": "webpack && node --inspect-brk=5858 server.js",
-    "build": "webpack",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "final": "webpack && node server.js",
+    "debug": "webpack-dev-server && node server.js",
+    "build": "webpack"
   },
   "keywords": [],
   "author": "Riley Lemmler",

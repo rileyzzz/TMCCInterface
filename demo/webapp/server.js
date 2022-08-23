@@ -47,7 +47,8 @@ io.on('connection', (socket)=>{
 
   socket.on('command', (value)=>{
     console.log('received command: ', value);
-    tmcc.write(value);
+    if (tmcc)
+      tmcc.write(value);
   });
 
   // when server disconnects from user

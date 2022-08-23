@@ -33,25 +33,13 @@ socket.on('disconnect', function(){
 
 $(document).ready(function () {
 
-
-  $("#test").click(function () {
-    //  $.post("/request",
-    //     {
-    //        name: "cool stuff",
-    //        designation: "cool 2"
-    //     },
-    //     function (data, status) {
-    //        console.log(data);
-    //     });
-
-    // emits message from user side
-    // socket.emit('createMessage', {
-    //   to:'clientside message',
-    //   text:'lol'
-    // });
-
-    let cmd = "setThrottle " + (5.0).toString() + "\r\n";
+  $("#throttle").on('input change', function () {
+    let cmd = "setThrottle " + ($(this).val() / 200.0).toString() + "\r\n";
     socket.emit('command', cmd);
+  });
 
+  $("#brake").on('input change', function () {
+    let cmd = "setBrake " + ($(this).val() / 8.0).toString() + "\r\n";
+    socket.emit('command', cmd);
   });
 });
