@@ -30,5 +30,5 @@ target_include_directories(TMCC PUBLIC include)
 
 target_compile_definitions(TMCC PRIVATE TMCC_EXPORT=1)
 
-add_subdirectory(testapp)
+add_subdirectory(demo)
 
