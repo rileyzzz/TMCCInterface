@@ -17,6 +17,7 @@ let server = http.createServer(app);
 let io = socketIO(server);
 
 server.listen(port);
+console.log(`Listening on port ${port}`);
 
 // make a connection with the user from server side
 io.on('connection', (socket)=>{
