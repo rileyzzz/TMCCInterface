@@ -42,4 +42,9 @@ $(document).ready(function () {
     let cmd = "setBrake " + ($(this).val() / 8.0).toString() + "\r\n";
     socket.emit('command', cmd);
   });
+
+  $("#legacy").change(function () {
+    let cmd = "setLegacy " + (this.checked ? 1 : 0).toString() + "\r\n";
+    socket.emit('command', cmd);
+  });
 });
