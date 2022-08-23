@@ -119,7 +119,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
       printf("Set engine to %d\n", s_engine);
     }
   }
-  if (!strcmp(command, "setLegacy"))
+  else if (!strcmp(command, "setLegacy"))
   {
     int legacy;
     if (sscanf(data, "%d", &legacy))
