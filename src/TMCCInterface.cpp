@@ -9,8 +9,7 @@
 HANDLE serialPort;
 
 #endif // WINDOWS
-
-
+#include <filesystem>
 
 static std::vector<DeviceInfo> s_devices;
 static DeviceInfo* s_currentDevice;
@@ -213,9 +212,20 @@ static std::vector<DeviceInfo> GetDevices()
   SetupDiDestroyDeviceInfoList(hDeviceInfo);
 
 #else // !WINDOWS
-  
-#endif // !WINDOWS
+  std::filesystem::path path("/sys/class/tty");
+  for (const auto& e : std::filesystem::directory_iterator(path))
+  {
+    if (std::filesystem::is_symlink(e.symlink_status()))
+    {
+      std::filesystem::path points = std::filesystem::read_symlink(e);
+      std::filesystem::path canonical_path = std::filesystem::canonical(points);
 
+      DeviceInfo device;
+      device.SetPortName(canonical_path.string().c_str());
+      devices.push_back(device);
+    }
+  }
+#endif // !WINDOWS
 
   return devices;
 }

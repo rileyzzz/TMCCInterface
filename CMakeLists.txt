@@ -24,7 +24,12 @@ set(TMCC_SOURCES
 	src/TMCCInterface.cpp)
 
 add_library(TMCC SHARED ${TMCC_SOURCES})
+
+if (WIN32)
 target_link_libraries(TMCC PUBLIC SetupAPI.lib)
+else()
+target_link_libraries(TMCC PUBLIC stdc++fs)
+endif()
 
 target_include_directories(TMCC PUBLIC include)
 

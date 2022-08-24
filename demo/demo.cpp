@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
     numDevices = TMCCInterface::EnumerateDevices(&devices);
     for (int i = 0; i < numDevices; i++)
     {
-      printf("%d: %s\n", i, devices[i].GetFriendlyName());
+      printf("%d: %s (%s)\n", i, devices[i].GetFriendlyName(), devices[i].GetPortName());
     }
 
     if (!scanf("%d", &deviceID))
