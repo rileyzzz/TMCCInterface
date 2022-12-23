@@ -1,0 +1,17 @@
+{
+  "name": "twitch",
+  "version": "1.0.0",
+  "description": "Twitch plays Lionel",
+  "main": "server.js",
+  "scripts": {
+    "final": "node server.js",
+    "debug": "node server.js",
+    "build": ""
+  },
+  "author": "rileyzzz",
+  "license": "ISC",
+  "dependencies": {
+    "open": "^8.4.0",
+    "tmi.js": "^1.8.5"
+  }
+}
