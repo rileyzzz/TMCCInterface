@@ -13,6 +13,7 @@ const { io } = require("socket.io-client");
 
 
 var socket=io()
+var engine = 0;
 
 // connection with server
 socket.on('connect', function(){
@@ -66,12 +67,12 @@ function clearNumeric() {
 $(document).ready(function () {
 
   $("#throttle").on('input change', function () {
-    let cmd = "setThrottle " + ($(this).val() / 200.0).toString() + "\r\n";
+    let cmd = "setThrottle " + engine.toString() + " " + ($(this).val() / 200.0).toString() + "\r\n";
     socket.emit('command', cmd);
   });
 
   $("#brake").on('input change', function () {
-    let cmd = "setBrake " + ($(this).val() / 8.0).toString() + "\r\n";
+    let cmd = "setBrake " + engine.toString() + " " + ($(this).val() / 8.0).toString() + "\r\n";
     socket.emit('command', cmd);
   });
 
@@ -102,12 +103,13 @@ $(document).ready(function () {
       return;
     
     if (numericInput) {
-      let cmd = "numericCommand " + numericBuf + "\r\n";
+      let cmd = "numericCommand " + engine.toString() + " " + numericBuf + "\r\n";
       socket.emit('command', cmd);
     }
     else {
-      let cmd = "setEngine " + numericBuf + "\r\n";
-      socket.emit('command', cmd);
+      // let cmd = "setEngine " + numericBuf + "\r\n";
+      // socket.emit('command', cmd);
+	  engine = numericBuf;
     }
   });
 

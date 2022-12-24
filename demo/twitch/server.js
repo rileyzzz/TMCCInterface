@@ -29,7 +29,8 @@ if (args.length < 1)
   console.error("Error: No engine number specified! Defaulting to 0.");
 
 var client = null;
-var channel_engine_ids = [];
+var channel_engine_ids = {};
+var input_engine_ids = [];
 var bot_user = "";
 var bot_client_id = "";
 var bot_client_secret = "";
@@ -38,12 +39,12 @@ var cooldown_time = 5.0;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "-engine" && i + 1 < args.length) {
-    channel_engine_ids = args[i + 1].split(",").map(s => parseInt(s.trim()));
+    input_engine_ids = args[i + 1].split(",").map(s => parseInt(s.trim()));
 
-    for (let i = 0; i < channel_engine_ids.length; i++) {
-      if (isNaN(channel_engine_ids[i]) || channel_engine_ids[i] < 0) {
-        console.error(`Invalid engine ID entered: '${channel_engine_ids[i]}'. Defaulting to 0.`);
-        channel_engine_ids[i] = 0;
+    for (let i = 0; i < input_engine_ids.length; i++) {
+      if (isNaN(input_engine_ids[i]) || input_engine_ids[i] < 0) {
+        console.error(`Invalid engine ID entered: '${input_engine_ids[i]}'. Defaulting to 0.`);
+        input_engine_ids[i] = 0;
       }
     }
   }
@@ -77,8 +78,18 @@ if (!bot_client_secret)
 if (bot_channels.length == 0)
   console.error("No bot channels specified!");
 
-if (channel_engine_ids.length == 0)
+if (input_engine_ids.length == 0)
   console.error("No engine IDs specified!");
+
+if (input_engine_ids.length == bot_channels.length) {
+  for (let i = 0; i < input_engine_ids.length; i++) {
+    console.log(`${bot_channels[i]}: Engine ${input_engine_ids[i]}`);
+    channel_engine_ids["#" + bot_channels[i]] = input_engine_ids[i];
+  }
+}
+else {
+  console.error("Number of engine IDs doesn't match number of channels!");
+}
 
 const tokenPath = './tokens.json';
 
@@ -91,34 +102,72 @@ if (fs.existsSync(tokenPath)) {
   bot_token = json.token;
   bot_refresh_token = json.refresh_token;
 
-  tryStartClient();
+  tryStartClient(true);
 }
 else {
   // first time auth
-  let http = require('http');
-  let server = http.createServer();
-  server.listen(3000);
+  getAuthCode().then((auth_code) => {
+    getToken(auth_code).then(() => tryStartClient(false));
+  });
+}
 
-  var auth_code = null;
-  server.on('request', (req, res) => {
-    // console.log(`received 3000 request ${req.url}`);
-    if (auth_code)
-      return;
-    
-    const queryObject = url.parse(req.url, true).query;
-    if (queryObject.code) {
-      auth_code = queryObject.code;
-      console.log(`Received auth code '${auth_code}'`);
-    }
-    else {
-      return;
-    }
 
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end("Please close this window");
-    // server.close();
+// connect to C++ app
+const tmcc_port = 8080;
+tmcc = null;
 
-    
+require('net').createServer(function (socket) {
+  console.log("Connected to TMCC");
+
+  tmcc = socket;
+  socket.on('data', function (data) {
+      console.log(data.toString());
+  });
+
+  // socket.write('Hello\n');
+  // socket.write('Hello 2\n');
+}).listen(tmcc_port);
+
+// process.on('uncaughtException', function (err) {
+//   console.error(err.stack);
+// });
+
+function getAuthCode() {
+  return new Promise((resolve, reject) => {
+    // first time auth
+    let http = require('http');
+    let server = http.createServer();
+    server.listen(3000);
+
+    var auth_code = null;
+    server.on('request', (req, res) => {
+      // console.log(`received 3000 request ${req.url}`);
+      if (auth_code)
+        return;
+      
+      const queryObject = url.parse(req.url, true).query;
+      if (queryObject.code) {
+        auth_code = queryObject.code;
+        console.log(`Received auth code '${auth_code}'`);
+        resolve(auth_code);
+        server.close();
+      }
+      else {
+        return;
+      }
+
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end("Please close this window");
+      // server.close();
+
+    });
+
+    open(`https://id.twitch.tv/oauth2/authorize?response_type=code&client_id=${bot_client_id}&redirect_uri=http://localhost:3000&scope=chat%3Aread+chat%3Aedit`);
+  });
+}
+
+function getToken(auth_code) {
+  return new Promise((resolve, reject) => {
     var post_data = `client_id=${bot_client_id}&client_secret=${bot_client_secret}&code=${auth_code}&grant_type=authorization_code&redirect_uri=http://localhost:3000`;
     console.log(`POST: ${post_data}`);
     var post_options = {
@@ -151,52 +200,91 @@ else {
         });
         fs.writeFileSync(tokenPath, json);
 
-        tryStartClient();
+        resolve();
       });
     });
 
     post_req.on('error', (e) => {
       console.error(e);
+      reject();
     });
 
     post_req.on('timeout', () => {
       post_req.destroy();
       console.error("Request timed out!");
+      reject();
     });
 
     // post the data
     post_req.write(post_data);
     post_req.end();
-
-    // startClient();
   });
-  
-  open(`https://id.twitch.tv/oauth2/authorize?response_type=code&client_id=${bot_client_id}&redirect_uri=http://localhost:3000&scope=chat%3Aread+chat%3Aedit`);
-
 }
 
+function refreshToken(auth_code) {
+  return new Promise((resolve, reject) => {
+    // we need a new token
+    var post_data = `client_id=${bot_client_id}&client_secret=${bot_client_secret}&code=${auth_code}&grant_type=refresh_token&refresh_token=${bot_refresh_token}`;
+    console.log(`POST: ${post_data}`);
+    var post_options = {
+      host: 'id.twitch.tv',
+      port: 443,
+      path: '/oauth2/token',
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': post_data.length
+      }
+    };
 
-// connect to C++ app
-const tmcc_port = 8080;
-tmcc = null;
+    var post_req = https.request(post_options, function(res) {
+      res.setEncoding('utf8');
 
-// require('net').createServer(function (socket) {
-//   console.log("connected");
+      let allData = '';
+      res.on('data', chunk => {
+          allData += chunk;
+      });
 
-//   tmcc = socket;
-//   socket.on('data', function (data) {
-//       console.log(data.toString());
-//   });
+      res.on('end', () => {
+        let resolved_data = JSON.parse(allData);
+        bot_token = resolved_data.access_token;
+        bot_refresh_token = resolved_data.refresh_token;
 
-//   // socket.write('Hello\n');
-//   // socket.write('Hello 2\n');
-// }).listen(tmcc_port);
+        // resave the data
+        if (bot_token && bot_refresh_token) {
+          console.log("Updated token file.");
+          let json = JSON.stringify({
+            token: bot_token,
+            refresh_token: bot_refresh_token
+          });
+          fs.writeFileSync(tokenPath, json);
 
-// process.on('uncaughtException', function (err) {
-//   console.error(err.stack);
-// });
+          resolve();
+        }
+        else {
+          reject();
+        }
+      });
+    });
 
-function tryStartClient() {
+    post_req.on('error', (e) => {
+      console.error(e);
+      reject();
+    });
+
+    post_req.on('timeout', () => {
+      post_req.destroy();
+      console.error("Request timed out!");
+      reject();
+    });
+
+    // post the data
+    post_req.write(post_data);
+    post_req.end();
+  });
+}
+
+function tryStartClient(retry) {
   if (!bot_token || !bot_refresh_token) {
     console.error("Invalid token or refresh token!");
     return;
@@ -211,82 +299,31 @@ function tryStartClient() {
   };
 
   // Create a client with our options
-  // try {
   client = new tmi.client(opts);
-  // }
-  // catch (error) {
-  //   if (error) {
-  //     console.log("Token has expired - refreshing.");
-  //     // we need a new token
-  //     var post_data = `client_id=${bot_client_id}&client_secret=${bot_client_secret}&code=${auth_code}&grant_type=refresh_token&refresh_token=${bot_refresh_token}`;
-  //     console.log(`POST: ${post_data}`);
-  //     var post_options = {
-  //       host: 'id.twitch.tv',
-  //       port: 443,
-  //       path: '/oauth2/token',
-  //       method: 'POST',
-  //       headers: {
-  //           'Content-Type': 'application/x-www-form-urlencoded',
-  //           'Content-Length': post_data.length
-  //       }
-  //     };
-  
-  //     var post_req = https.request(post_options, function(res) {
-  //       res.setEncoding('utf8');
-  
-  //       let allData = '';
-  //       res.on('data', chunk => {
-  //           allData += chunk;
-  //       });
-  
-  //       res.on('end', () => {
-  //         let resolved_data = JSON.parse(allData);
-  //         bot_token = resolved_data.access_token;
-  //         bot_refresh_token = resolved_data.refresh_token;
-  
-  //         // resave the data
-  //         if (bot_token && bot_refresh_token) {
-  //           console.log("Updated token file.");
-  //           let json = JSON.stringify({
-  //             token: bot_token,
-  //             refresh_token: bot_refresh_token
-  //           });
-  //           fs.writeFile(tokenPath, json, 'utf8');
-  //         }
-  //       });
-  //     });
-  
-  //     post_req.on('error', (e) => {
-  //       console.error(e);
-  //     });
-  
-  //     post_req.on('timeout', () => {
-  //       post_req.destroy();
-  //       console.error("Request timed out!");
-  //     });
-  
-  //     // post the data
-  //     post_req.write(post_data);
-  //     post_req.end();
-  //   }
-  // }
+
   // Register our event handlers (defined below)
   client.on('message', onMessageHandler);
   client.on('connected', onConnectedHandler);
 
   // Connect to Twitch:
-  client.connect();
+  client.connect().catch(err => {
+    if (retry) {
+      console.log("Token has (probably) expired - refreshing.");
 
-  // once connected, begin processing votes
-  setInterval(function() {
-    bot_channels.forEach(c => processVotes(c));
-  }, cooldown_time * 1000);
+      getAuthCode().then((auth_code) => {
+        refreshToken(auth_code).then(() => tryStartClient(false));
+      });
+    }
+    else {
+      console.error("Failed to refresh token.");
+    }
+  });
 }
 
 var last_command_time = 0;
 
 // Called every time a message comes in
-function onMessageHandler (target, context, msg, self) {
+function onMessageHandler (target, tags, msg, self) {
   if (self) { return; } // Ignore messages from the bot
   
   // Remove whitespace from chat message
@@ -294,12 +331,13 @@ function onMessageHandler (target, context, msg, self) {
 
   if (commandName === "!help") {
     // always give help immediately, don't trigger the cooldown
-    client.say(target, `Commands:
+    client.say(target, `@${tags['display-name']}
+      Commands:
       '!throttle [0-200]' - Set the locomotive's speed.
       '!horn' - Honk the horn!
       '!bell' - Toggle the locomotive's bell.
       '!direction [forward/backward]' - Should the train move forward or backwards?
-      '!junction [junction_id]' - Switch the direction of a junction on the layout.
+      '!junction [junction_id] [out/through]' - Switch the direction of a junction on the layout.
     `);
     return;
   }
@@ -323,6 +361,11 @@ function onMessageHandler (target, context, msg, self) {
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler (addr, port) {
   console.log(`* Connected to ${addr}:${port}`);
+
+  // once connected, begin processing votes
+  setInterval(function() {
+    bot_channels.forEach(c => processVotes(c));
+  }, cooldown_time * 1000);
 }
 
 function processCommand(client, target, command) {
@@ -340,9 +383,11 @@ function processCommand(client, target, command) {
     addVote(target, VoteType.Horn);
     return true;
   }
-  else if (args[0] === "!bell") {
-    addVote(target, VoteType.Bell);
-    return true;
+  else if (args[0] === "!bell" && args.length > 1) {
+    if (args[1] === "on" || args[1] === "off") {
+      addVote(target, VoteType.Bell, args[1]);
+      return true;
+    }
   }
   else if (args[0] === "!direction" && args.length > 1) {
     if (args[1] === "forward" || args[1] === "backward") {
@@ -350,11 +395,11 @@ function processCommand(client, target, command) {
       return true;
     }
   }
-  else if (args[0] === "!junction" && args.length > 1) {
+  else if (args[0] === "!junction" && args.length > 2) {
     let junctionId = parseInt(args[1]);
-
-    if (!isNaN(junctionId) && junctionId >= 0) {
-      addVote(target, VoteType.Junction, junctionId);
+    let junctionDir = args[2];
+    if (!isNaN(junctionId) && junctionId >= 0 && (junctionDir === "out" || junctionDir === "through")) {
+      addVote(target, VoteType.Junction, junctionId, junctionDir);
       return true;
     }
   }
@@ -392,6 +437,10 @@ declareVoteType(VoteType.Throttle,
     let avg = data.values.reduce((a, b) => a + b) / data.values.length;
 
     client.say(channel, `Setting the throttle to ${avg}!`);
+
+    if (tmcc) {
+      tmcc.write(`setThrottle ${channel_engine_ids[channel]} ${(avg / 200.0)}\r\n`);
+    }
   }
 );
 
@@ -406,20 +455,40 @@ declareVoteType(VoteType.Horn,
   // Category has won
   function(channel, data) {
     client.say(channel, "Honking the horn!");
+
+    if (tmcc) {
+      tmcc.write(`blowHorn ${channel_engine_ids[channel]}\r\n`);
+    }
   }
 );
 
 declareVoteType(VoteType.Bell,
   // Vote data
   function() {
-    return null;
+    return { values: [] };
   },
   // Process a vote
   function(channel, data, args) {
+    data.values.push(args[0]);
   },
   // Category has won
   function(channel, data) {
-    client.say(channel, "Ringing the bell!");
+    let choice = mode(data.values);
+
+    if (choice === "on") {
+      client.say(channel, "Ringing the bell!");
+
+      if (tmcc) {
+        tmcc.write(`setBell ${channel_engine_ids[channel]} 1\r\n`);
+      }
+    }
+    else {
+      client.say(channel, "Turning off the bell!");
+
+      if (tmcc) {
+        tmcc.write(`setBell ${channel_engine_ids[channel]} 0\r\n`);
+      }
+    }
   }
 );
 
@@ -437,23 +506,61 @@ declareVoteType(VoteType.Direction,
     let choice = mode(data.values);
 
     client.say(channel, `Setting the direction to ${choice}!`);
+
+    if (choice === "forward") {
+      if (tmcc) {
+        tmcc.write(`setDirection ${channel_engine_ids[channel]} 1\r\n`);
+      }
+    }
+    else {
+      if (tmcc) {
+        tmcc.write(`setDirection ${channel_engine_ids[channel]} 0\r\n`);
+      }
+    }
   }
 );
 
 declareVoteType(VoteType.Junction,
   // Vote data
   function() {
-    return { values: [] };
+    return { junction_votes: {} };
   },
   // Process a vote
   function(channel, data, args) {
-    data.values.push(args[0]);
+    let id = args[0];
+    let dir = args[1];
+    if (!(id in data.junction_votes))
+      data.junction_votes[id] = [];
+    
+    data.junction_votes[id].push(dir);
   },
   // Category has won
   function(channel, data) {
-    let choice = mode(data.values);
+    let highest_votes = 0;
+    let highest_id = null;
+    for (const [key, value] of Object.entries(data.junction_votes)) {
+      if (value.length > highest_votes) {
+        highest_votes = value.length;
+        highest_id = key;
+      }
+    }
+    
+    if (!highest_id || highest_id.length == 0)
+      return;
+    
+    let choice = mode(data.junction_votes[highest_id]);
 
-    client.say(channel, `Toggling junction ${choice}!`);
+    client.say(channel, `Setting junction ${highest_id} to ${choice}!`);
+    if (choice === "out") {
+      if (tmcc) {
+        tmcc.write(`setJunctionOut ${highest_id}\r\n`);
+      }
+    }
+    else {
+      if (tmcc) {
+        tmcc.write(`setJunctionThrough ${highest_id}\r\n`);
+      }
+    }
   }
 );
 
