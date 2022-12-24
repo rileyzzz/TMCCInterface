@@ -1,0 +1,242 @@
+// // Import all of Bootstrap's CSS
+// @import "~bootstrap/scss/bootstrap";
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.graph-content {
+    font-family: 'Open Sans';
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.graph-header {
+    margin-left: 18px;
+    font-size: 30px;
+    font-weight: bold;
+    width: 100%;
+    height: 48px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.bottom-spacer {
+    height: 32px;
+}
+
+.graph-background {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.graph-bar-container {
+    display: block;
+    position: relative;
+    height: 100%;
+    flex-grow: 1;
+    margin: 2px;
+}
+
+.graph-bar {
+    position: absolute;
+    display: flex;
+    bottom: 0;
+    height: 50%;
+    width: 100%;
+    background-color: #5131af;
+    transition: height 0.1s;
+    overflow: visible;
+    border-radius: 8px;
+}
+
+.graph-bar-percent {
+    margin-top: 16px;
+    width: 100%;
+    height: 32px;
+
+    text-align: center;
+    font-size: 30px;
+    color: white;
+    text-shadow: 2px 2px black;
+}
+
+.graph-bar-label {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    bottom: -30px;
+    font-size: 22px;
+}
+
+// .main-content {
+//     display: flex;
+//     flex-direction: row;
+//     // height: 100%;
+//     flex-grow: 1;
+//     flex-shrink: 1;
+//     padding-top: 4px;
+//     padding-bottom: 4px;
+// }
+
+// .slider-box {
+//     display: flex;
+//     flex-direction: column;
+//     width: 80px;
+//     padding: 12px;
+//     flex-shrink: 0;
+//     flex-grow: 0;
+//     border-radius: 4px;
+//     border: 1px solid white;
+//     background-color: #111111;
+// }
+
+// .slider {
+//     flex-grow: 1;
+//     flex-shrink: 1;
+//     margin-top: 8px;
+//     margin-bottom: 8px;
+//     // margin-bottom: 8px;
+//     // width: 40px;
+//     // height: 200px;
+//     -webkit-appearance: slider-vertical;
+// }
+
+// .slider::-webkit-slider-thumb {
+//     -webkit-appearance: none;
+//     appearance: none;
+//     width: 25px;
+//     height: 25px;
+//     background: #aa2504;
+//     cursor: pointer;
+// }
+// .slider::-moz-range-thumb {
+//     width: 25px;
+//     height: 25px;
+//     background: #aa2504;
+//     cursor: pointer;
+// }
+
+// .center-content {
+//     flex-shrink: 1;
+//     flex-grow: 1;
+//     flex-direction: column;
+// }
+
+// .legacy-box {
+//     padding: 4px;
+//     border: 1px solid white;
+//     border-radius: 4px;
+//     width: 40%;
+//     flex-grow: 0;
+//     flex-shrink: 0;
+//     margin: auto;
+// }
+
+// .kp-buffer-container {
+//     margin: 16px auto 0px auto;
+//     display: flex;
+//     flex-direction: row;
+//     justify-content: center;
+// }
+
+// #kp-buffer {
+//     // margin: auto;
+//     flex-grow: 0;
+//     flex-shrink: 1;
+
+//     height: 44px;
+//     min-width: 128px;
+//     background-color: #0f0f0f;
+//     border: 1px solid white;
+//     border-radius: 4px;
+//     padding: 2px;
+//     font-family: Arial;
+//     font-size: 28px;
+//     text-align: right;
+//     color: white;
+// }
+
+// .keypad-container {
+//     display: flex;
+//     flex-direction: row;
+//     justify-content: center;
+//     margin: 16px auto 0px auto;
+// }
+
+// .keypad {
+//     // display: flex;
+//     // flex-direction: column;
+//     display: grid;
+//     gap: 4px;
+//     grid-template-columns: 80px 80px 80px;
+//     grid-auto-rows: 80px;
+
+//     // margin: 16px auto 0px auto;
+//     flex-grow: 0;
+//     flex-shrink: 1;
+// }
+
+// .kp-row {
+//     display: flex;
+//     flex-direction: row;
+//     justify-content: center;
+//     height: 80px;
+// }
+
+// .kp-row-small {
+//     display: flex;
+//     flex-direction: row;
+//     justify-content: center;
+//     height: 40px;
+// }
+
+// .kp-button {
+//     // width: 80px;
+//     background: #aa2504;
+//     border: 1px solid white;
+//     border-radius: 4px;
+//     // margin: 2px;
+//     color: white;
+//     font-weight: bold;
+//     font-size: 22px;
+//     text-shadow: 0px 0px 2px black;
+//     transition: background-color .2s;
+//     transition-timing-function: ease-out;
+// }
+
+// #kp-clear {
+//     background: #171717;
+//     // width: 120px;
+//     // flex-grow: 1;
+// }
+
+// #kp-go {
+//     background: #05a02e;
+//     // width: 160px;
+//     // flex-grow: 1;
+// }
+
+// #kp-go:active {
+//     background: #035f1c;
+// }
+
+// .kp-text {
+//     font-family: Arial;
+// }
+
+// .kp-button:active {
+//     background: #671702;
+// }
+
+// .active-mode {
+//     background: #05a02e;
+// }
