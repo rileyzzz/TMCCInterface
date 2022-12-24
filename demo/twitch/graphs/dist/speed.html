@@ -4,63 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
     <title>TMCC Web Interface</title>
     <!-- <meta name="viewport" content="user-scalable=no"> -->
   </head>
-  <body class="text-center bg-dark text-white">
-    <div class="container py-4 px-3 mx-auto">
-      <h1>TMCC Demo</h1>
-    </div>
-    <div class="main-content">
-      <div class="slider-box">
-        <span class="material-icons">speed</span>
-        <input type="range" min="0" max="200" value="0" class="slider" id="throttle">
-      </div>
-      <div class="center-content">
-        <div class="legacy-container">
-          <div class="legacy-box">
-            <span style="margin-right: 4px">Legacy</span>
-            <input type="checkbox" id="legacy">
-          </div>
-        </div>
-        <div class="kp-buffer-container">
-          <div id="kp-buffer"></div>
-        </div>
-        <div class="keypad-container">
-          <div class="keypad">
-            <!-- <div class="kp-row"> -->
-              <button type="button" class="kp-button kp-text" style="grid-column: 1; grid-row: 1;" id="kp-1">1</button>
-              <button type="button" class="kp-button kp-text" style="grid-column: 2; grid-row: 1;" id="kp-2">2</button>
-              <button type="button" class="kp-button kp-text" style="grid-column: 3; grid-row: 1;" id="kp-3">3</button>
-            <!-- </div> -->
-            <!-- <div class="kp-row"> -->
-              <button type="button" class="kp-button kp-text" style="grid-column: 1; grid-row: 2;" id="kp-4">4</button>
-              <button type="button" class="kp-button kp-text" style="grid-column: 2; grid-row: 2;" id="kp-5">5</button>
-              <button type="button" class="kp-button kp-text" style="grid-column: 3; grid-row: 2;" id="kp-6">6</button>
-            <!-- </div> -->
-            <!-- <div class="kp-row"> -->
-              <button type="button" class="kp-button kp-text" style="grid-column: 1; grid-row: 3;" id="kp-7">7</button>
-              <button type="button" class="kp-button kp-text" style="grid-column: 2; grid-row: 3;" id="kp-8">8</button>
-              <button type="button" class="kp-button kp-text" style="grid-column: 3; grid-row: 3;" id="kp-9">9</button>
-            <!-- </div> -->
-            <!-- <div class="kp-row"> -->
-              <button type="button" class="kp-button material-icons" style="grid-column: 1; grid-row: 4;" id="kp-engine">train</button>
-              <button type="button" class="kp-button kp-text" style="grid-column: 2; grid-row: 4;" id="kp-0">0</button>
-              <button type="button" class="kp-button material-icons" style="grid-column: 3; grid-row: 4;" id="kp-numeric">tag</button>
-            <!-- </div> -->
-            <!-- <div class="kp-row-small"> -->
-              <button type="button" class="kp-button material-icons" style="grid-column: 1; grid-row: 5;" id="kp-clear">backspace</button>
-              <button type="button" class="kp-button material-icons" style="grid-column: 2/span 2; grid-row: 5;" id="kp-go">send</button>
-            <!-- </div> -->
-          </div>
-        </div>
-      </div>
-      <div class="slider-box">
-        <span class="material-icons">do_not_disturb_on</span>
-        <input type="range" min="0" max="8" value="0" class="slider" id="brake">
-      </div>
-    </div>
+  <body>
+    
     <script src="./main.js"></script>
   </body>
 </html>

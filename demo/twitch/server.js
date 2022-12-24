@@ -1,11 +1,11 @@
 
 const path = require("path");
-const http = require('http');
-const https = require('https');
-const url = require('url');
 const tmi = require('tmi.js');
 const fs = require('fs');
-const open = require('open');
+var graph = require('./graph');
+
+// how frequently to update the graph
+const graph_update_interval = 0.5;
 
 const VoteType = {
   // Throttle: Symbol("throttle"),
@@ -19,6 +19,21 @@ const VoteType = {
   Direction: "direction",
   Juction: "junction"
 };
+
+function getVoteTypeName(type) {
+  if (type === VoteType.Throttle)
+    return "Throttle";
+  else if (type === VoteType.Horn)
+    return "Horn";
+  else if (type === VoteType.Bell)
+    return "Bell";
+  else if (type === VoteType.Direction)
+    return "Direction";
+  else if (type === VoteType.Junction)
+    return "Junction";
+  return "Unkown";
+}
+
 var vote_callbacks = {};
 var channel_vote_data = {};
 
@@ -91,23 +106,38 @@ else {
   console.error("Number of engine IDs doesn't match number of channels!");
 }
 
-const tokenPath = './tokens.json';
+var twitch = require('./twitch');
 
+const tokenPath = './tokens.json';
 var bot_token = null;
 var bot_refresh_token = null;
+
 if (fs.existsSync(tokenPath)) {
   let rawdata = fs.readFileSync(tokenPath);
   let json = JSON.parse(rawdata);
 
   bot_token = json.token;
   bot_refresh_token = json.refresh_token;
-
+  
   tryStartClient(true);
 }
 else {
   // first time auth
-  getAuthCode().then((auth_code) => {
-    getToken(auth_code).then(() => tryStartClient(false));
+  twitch.getAuthCode(bot_client_id)
+  .then((auth_code) => {
+    twitch.getToken(bot_client_id, bot_client_secret, auth_code)
+    .then((data) => {
+      bot_token = data.token;
+      bot_refresh_token = data.refresh_token;
+
+      let json = JSON.stringify({
+        token: bot_token,
+        refresh_token: bot_refresh_token
+      });
+      fs.writeFileSync(tokenPath, json);
+
+      tryStartClient(false);
+    });
   });
 }
 
@@ -132,159 +162,9 @@ require('net').createServer(function (socket) {
 //   console.error(err.stack);
 // });
 
-function getAuthCode() {
-  return new Promise((resolve, reject) => {
-    // first time auth
-    let http = require('http');
-    let server = http.createServer();
-    server.listen(3000);
-
-    var auth_code = null;
-    server.on('request', (req, res) => {
-      // console.log(`received 3000 request ${req.url}`);
-      if (auth_code)
-        return;
-      
-      const queryObject = url.parse(req.url, true).query;
-      if (queryObject.code) {
-        auth_code = queryObject.code;
-        console.log(`Received auth code '${auth_code}'`);
-        resolve(auth_code);
-        server.close();
-      }
-      else {
-        return;
-      }
-
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end("Please close this window");
-      // server.close();
-
-    });
-
-    open(`https://id.twitch.tv/oauth2/authorize?response_type=code&client_id=${bot_client_id}&redirect_uri=http://localhost:3000&scope=chat%3Aread+chat%3Aedit`);
-  });
-}
-
-function getToken(auth_code) {
-  return new Promise((resolve, reject) => {
-    var post_data = `client_id=${bot_client_id}&client_secret=${bot_client_secret}&code=${auth_code}&grant_type=authorization_code&redirect_uri=http://localhost:3000`;
-    console.log(`POST: ${post_data}`);
-    var post_options = {
-      host: 'id.twitch.tv',
-      port: 443,
-      path: '/oauth2/token',
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': post_data.length
-      }
-    };
-
-    var post_req = https.request(post_options, function(res) {
-      res.setEncoding('utf8');
-
-      let allData = '';
-      res.on('data', chunk => {
-          allData += chunk;
-      });
-
-      res.on('end', () => {
-        let resolved_data = JSON.parse(allData);
-        bot_token = resolved_data.access_token;
-        bot_refresh_token = resolved_data.refresh_token;
-
-        let json = JSON.stringify({
-          token: bot_token,
-          refresh_token: bot_refresh_token
-        });
-        fs.writeFileSync(tokenPath, json);
-
-        resolve();
-      });
-    });
-
-    post_req.on('error', (e) => {
-      console.error(e);
-      reject();
-    });
-
-    post_req.on('timeout', () => {
-      post_req.destroy();
-      console.error("Request timed out!");
-      reject();
-    });
-
-    // post the data
-    post_req.write(post_data);
-    post_req.end();
-  });
-}
-
-function refreshToken(auth_code) {
-  return new Promise((resolve, reject) => {
-    // we need a new token
-    var post_data = `client_id=${bot_client_id}&client_secret=${bot_client_secret}&code=${auth_code}&grant_type=refresh_token&refresh_token=${bot_refresh_token}`;
-    console.log(`POST: ${post_data}`);
-    var post_options = {
-      host: 'id.twitch.tv',
-      port: 443,
-      path: '/oauth2/token',
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': post_data.length
-      }
-    };
-
-    var post_req = https.request(post_options, function(res) {
-      res.setEncoding('utf8');
-
-      let allData = '';
-      res.on('data', chunk => {
-          allData += chunk;
-      });
-
-      res.on('end', () => {
-        let resolved_data = JSON.parse(allData);
-        bot_token = resolved_data.access_token;
-        bot_refresh_token = resolved_data.refresh_token;
-
-        // resave the data
-        if (bot_token && bot_refresh_token) {
-          console.log("Updated token file.");
-          let json = JSON.stringify({
-            token: bot_token,
-            refresh_token: bot_refresh_token
-          });
-          fs.writeFileSync(tokenPath, json);
-
-          resolve();
-        }
-        else {
-          reject();
-        }
-      });
-    });
-
-    post_req.on('error', (e) => {
-      console.error(e);
-      reject();
-    });
-
-    post_req.on('timeout', () => {
-      post_req.destroy();
-      console.error("Request timed out!");
-      reject();
-    });
-
-    // post the data
-    post_req.write(post_data);
-    post_req.end();
-  });
-}
 
 function tryStartClient(retry) {
+  console.log(`bot token: '${bot_token}', refresh token '${bot_refresh_token}'`);
   if (!bot_token || !bot_refresh_token) {
     console.error("Invalid token or refresh token!");
     return;
@@ -310,8 +190,22 @@ function tryStartClient(retry) {
     if (retry) {
       console.log("Token has (probably) expired - refreshing.");
 
-      getAuthCode().then((auth_code) => {
-        refreshToken(auth_code).then(() => tryStartClient(false));
+      twitch.getAuthCode(bot_client_id)
+      .then((auth_code) => {
+        twitch.refreshToken(bot_client_id, bot_client_secret, auth_code, bot_refresh_token)
+        .then((data) => {
+          bot_token = data.token;
+          bot_refresh_token = data.refresh_token;
+
+          console.log("Updated token file.");
+          let json = JSON.stringify({
+              token: bot_token,
+              refresh_token: bot_refresh_token
+          });
+          fs.writeFileSync(tokenPath, json);
+
+          tryStartClient(false);
+        });
       });
     }
     else {
@@ -335,7 +229,7 @@ function onMessageHandler (target, tags, msg, self) {
       Commands:
       '!throttle [0-200]' - Set the locomotive's speed.
       '!horn' - Honk the horn!
-      '!bell' - Toggle the locomotive's bell.
+      '!bell [on/off]' - Toggle the locomotive's bell.
       '!direction [forward/backward]' - Should the train move forward or backwards?
       '!junction [junction_id] [out/through]' - Switch the direction of a junction on the layout.
     `);
@@ -366,6 +260,10 @@ function onConnectedHandler (addr, port) {
   setInterval(function() {
     bot_channels.forEach(c => processVotes(c));
   }, cooldown_time * 1000);
+
+  setInterval(function() {
+    bot_channels.forEach(c => updateGraph(c));
+  }, graph_update_interval * 1000);
 }
 
 function processCommand(client, target, command) {
@@ -628,4 +526,39 @@ function processVotes(channel) {
   vote_callbacks[highest_type].win(channel, data.vote_data[highest_type]);
   
   resetVotes();
+}
+
+function updateGraph(channel) {
+  let data = channel_vote_data[channel];
+  if (!data) {
+    return;
+  }
+
+  // find which category has the most votes
+  graph_data = {
+    title: 'Votes',
+    votes: []
+  }
+
+  // let highest = 0;
+  // let highest_type = null;
+  for (const [key, value] of Object.entries(vote_callbacks)) {
+    // skip empty categories
+    if (data.vote_counts[key] == 0)
+      continue;
+    
+    graph_data.votes.push({
+      text: getVoteTypeName(key),
+      value: data.vote_counts[key]
+    });
+  }
+
+  if (graph_data.votes.length == 0) {
+    return;
+  }
+
+  // sort graph bars
+  graph_data.votes.sort((a,b) => a.value - b.value);
+
+  graph.updateGraph(graph_data);
 }
