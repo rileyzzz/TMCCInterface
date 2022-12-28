@@ -51,6 +51,7 @@ var bot_client_id = "";
 var bot_client_secret = "";
 var bot_channels = [];
 var cooldown_time = 5.0;
+var max_throttle = 200.0;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "-engine" && i + 1 < args.length) {
@@ -78,6 +79,15 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === "-cooldown" && i + 1 < args.length) {
     // cooldown time in seconds
     cooldown_time = parseFloat(args[i + 1]);
+  }
+  else if (args[i] === "-maxthrottle" && i + 1 < args.length) {
+    // cooldown time in seconds
+    max_throttle = parseFloat(args[i + 1]);
+
+    if (max_throttle > 200) {
+      console.error("Invalid maxthrottle specified! Max 200.");
+      max_throttle = 200;
+    }
   }
 }
 
@@ -273,7 +283,9 @@ function processCommand(client, target, command) {
   
   if (args[0] === "!throttle" && args.length > 1) {
     let throttleValue = parseInt(args[1]);
-    if (!isNaN(throttleValue) && throttleValue >= 0 && throttleValue <= 200) {
+    if (!isNaN(throttleValue) && throttleValue >= 0) { //  && throttleValue <= 200
+      if (throttleValue > max_throttle)
+        throttleValue = max_throttle;
       addVote(target, VoteType.Throttle, throttleValue);
     }
   }
@@ -355,8 +367,20 @@ declareVoteType(VoteType.Horn,
   function(channel, data) {
     client.say(channel, "Honking the horn!");
 
-    if (tmcc) {
-      tmcc.write(`blowHorn ${channel_engine_ids[channel]}\r\n`);
+    // if (tmcc) {
+    //   tmcc.write(`blowHorn ${channel_engine_ids[channel]}\r\n`);
+    // }
+
+    // interval between blow horn commands
+    const hornDelay = 200;
+    let engineID = channel_engine_ids[channel];
+    for (let i = 0; i < 5; i++) {
+      setTimeout(function () {
+        if (tmcc) {
+          tmcc.write(`blowHorn ${engineID}\r\n`);
+        }
+
+      }, i * hornDelay);
     }
   }
 );
