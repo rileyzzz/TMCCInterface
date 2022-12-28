@@ -14,7 +14,7 @@ var socket = io();
 
 function buildGraph(data) {
   let graph = $("#graph");
-
+  
   $(".graph-header").text(data.title);
 
   while (graph.children().length > data.votes.length) {
@@ -50,6 +50,10 @@ function buildGraph(data) {
   }
 }
 
+function buildSpeed() {
+
+}
+
 
 $(document).ready(function () {
   // let test = [];
@@ -72,8 +76,16 @@ $(document).ready(function () {
   //   title: 'Title!',
   //   votes: test
   // });
-});
 
-socket.on('graph-update', function (msg) {
-  buildGraph(msg);
+  if ($("#graph")) {
+    socket.on('graph-update', function (msg) {
+      buildGraph(msg);
+    });
+  }
+
+  if ($("#speed")) {
+    // socket.on('graph-update', function (msg) {
+    //   buildGraph(msg);
+    // });
+  }
 });

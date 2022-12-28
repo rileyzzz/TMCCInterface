@@ -2,15 +2,66 @@ const express = require("express");
 const socketIO = require("socket.io");
 const path = require("path");
 const http = require("http");
+const url = require('url');
+const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 80;
 
 // Setting path for public directory 
 const static_path = path.join(__dirname, "graphs/dist");
-app.use(express.static(static_path));
-app.use(express.urlencoded({ extended: true }));
+const res_path = path.join(__dirname, "graphs/res");
+// app.use(express.static(static_path));
+app.use(express.static(res_path));
+// app.use(express.urlencoded({ extended: true }));
+
+
+app.use((req, res, next) => {
+  console.log(`received request ${req.url}`);
+
+  let reqUrl = url.parse(req.url, true);
+  let reqPath = reqUrl.pathname;
+  if (reqPath.startsWith("/"))
+    reqPath = reqPath.substring(1);
   
+  let parts = reqPath.split("/");
+  if (parts.length < 2)
+    return next();
+  
+  let channel = parts[0];
+  let localpath = parts.slice(1).join("/");
+  let file = path.join(static_path, localpath);
+  
+  console.log(`request channel '${channel}' file '${file}' local '${localpath}'`);
+
+  // We only answer to GET 
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return next();
+  }
+
+  if (localpath !== "init.js") {
+    fs.access(file, fs.constants.F_OK | fs.constants.R_OK, (err) => {
+      // why return?
+        if(err)
+          return next();
+        fs.readFile(file, (err, data) => {
+            if (err)
+              return next();
+
+            // Setup mime type of the file
+            res.setHeader("content-type", "text/html");
+            // send the client the modified html
+            res.send(data);
+        });
+    });
+    return;
+  }
+
+  console.log("getting init file");
+  return next();
+
+});
+
 let server = http.createServer(app);
 let io = socketIO(server);
 
@@ -34,7 +85,10 @@ io.on('connection', (socket)=>{
 });
 
 module.exports = {
-  updateGraph: function(data) {
-    io.emit('graph-update', data);
+  updateGraph: function(channel, data) {
+    io.emit('graph-update', {channel: channel, data: data});
+  },
+  updateSpeed: function(channel, data) {
+    io.emit('speed-update', {channel: channel, data: data});
   }
 };
