@@ -58,6 +58,8 @@ function buildSpeed(speed) {
   let angle = -135.0 + factor * 270.0;
   
   needle.css('transform', `rotate(${angle}deg)`);
+
+  $("#speed-label").text(speed.toString().padStart(3, '0'));
 }
 
 
