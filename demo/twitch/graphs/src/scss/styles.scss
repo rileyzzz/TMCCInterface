@@ -77,6 +77,26 @@ html, body {
     font-size: 22px;
 }
 
+.speed-container {
+    position: relative;
+    width: 100%;
+    // height: 100%;
+    aspect-ratio: 1 / 1;
+}
+
+.speed-background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.speed-needle {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.1s;
+}
+
 // .main-content {
 //     display: flex;
 //     flex-direction: row;

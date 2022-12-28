@@ -12,7 +12,7 @@ const port = process.env.PORT || 80;
 const static_path = path.join(__dirname, "graphs/dist");
 const res_path = path.join(__dirname, "graphs/res");
 // app.use(express.static(static_path));
-app.use(express.static(res_path));
+// app.use(express.static(res_path));
 // app.use(express.urlencoded({ extended: true }));
 
 
@@ -39,27 +39,30 @@ app.use((req, res, next) => {
       return next();
   }
 
-  if (localpath !== "init.js") {
-    fs.access(file, fs.constants.F_OK | fs.constants.R_OK, (err) => {
-      // why return?
-        if(err)
-          return next();
-        fs.readFile(file, (err, data) => {
-            if (err)
-              return next();
+  res.contentType(path.basename(localpath));
 
-            // Setup mime type of the file
-            res.setHeader("content-type", "text/html");
-            // send the client the modified html
-            res.send(data);
-        });
-    });
+  if (localpath === "init.js") {
+    console.log("getting init file");
+    res.send(`document.twitch_channel = \"${channel}\";`);
+
     return;
   }
 
-  console.log("getting init file");
-  return next();
+  fs.access(file, fs.constants.F_OK | fs.constants.R_OK, (err) => {
+    // why return?
+    if(err)
+      return next();
+    fs.readFile(file, (err, data) => {
+      if (err)
+        return next();
 
+      // Setup mime type of the file
+      // handled above
+      // res.setHeader("content-type", "text/html");
+      // send the client the modified html
+      res.send(data);
+    });
+  });
 });
 
 let server = http.createServer(app);
@@ -86,9 +89,11 @@ io.on('connection', (socket)=>{
 
 module.exports = {
   updateGraph: function(channel, data) {
-    io.emit('graph-update', {channel: channel, data: data});
+    console.log("emit " + 'graph-update-' + channel.substring(1));
+    io.emit('graph-update-' + channel.substring(1), data);
   },
   updateSpeed: function(channel, data) {
-    io.emit('speed-update', {channel: channel, data: data});
+    console.log("emit " + 'speed-update-' + channel.substring(1));
+    io.emit('speed-update-' + channel.substring(1), { speed: data });
   }
 };

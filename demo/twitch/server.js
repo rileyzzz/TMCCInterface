@@ -335,7 +335,8 @@ declareVoteType(VoteType.Throttle,
     let avg = data.values.reduce((a, b) => a + b) / data.values.length;
 
     client.say(channel, `Setting the throttle to ${avg}!`);
-
+    
+    graph.updateSpeed(channel, avg);
     if (tmcc) {
       tmcc.write(`setThrottle ${channel_engine_ids[channel]} ${(avg / 200.0)}\r\n`);
     }
@@ -405,6 +406,7 @@ declareVoteType(VoteType.Direction,
 
     client.say(channel, `Setting the direction to ${choice}!`);
 
+    graph.updateSpeed(channel, 0);
     if (choice === "forward") {
       if (tmcc) {
         tmcc.write(`setDirection ${channel_engine_ids[channel]} 1\r\n`);
@@ -560,5 +562,5 @@ function updateGraph(channel) {
   // sort graph bars
   graph_data.votes.sort((a,b) => a.value - b.value);
 
-  graph.updateGraph(graph_data);
+  graph.updateGraph(channel, graph_data);
 }

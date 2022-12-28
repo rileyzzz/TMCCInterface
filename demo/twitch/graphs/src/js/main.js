@@ -11,6 +11,7 @@ import '../scss/styles.scss'
 const { io } = require("socket.io-client");
 
 var socket = io();
+var listen_channel = null;
 
 function buildGraph(data) {
   let graph = $("#graph");
@@ -50,12 +51,21 @@ function buildGraph(data) {
   }
 }
 
-function buildSpeed() {
+function buildSpeed(speed) {
+  let needle = $("#needle");
 
+  let factor = speed / 200.0;
+  let angle = -135.0 + factor * 270.0;
+  
+  needle.css('transform', `rotate(${angle}deg)`);
 }
 
 
 $(document).ready(function () {
+  listen_channel = document.twitch_channel;
+  if (!listen_channel) {
+    console.error("No channel id provided!");
+  }
   // let test = [];
   // test.push({
   //   text: 'Data 1',
@@ -77,15 +87,20 @@ $(document).ready(function () {
   //   votes: test
   // });
 
-  if ($("#graph")) {
-    socket.on('graph-update', function (msg) {
+  if ($("#graph").length) {
+    console.log("listen for " + 'graph-update-' + listen_channel);
+    socket.on('graph-update-' + listen_channel, function (msg) {
       buildGraph(msg);
     });
   }
 
-  if ($("#speed")) {
-    // socket.on('graph-update', function (msg) {
-    //   buildGraph(msg);
-    // });
+  if ($("#needle").length) {
+    console.log("listen for " + 'speed-update-' + listen_channel);
+    socket.on('speed-update-' + listen_channel, function (msg) {
+      console.log(`update speed ${msg.speed}`);
+      buildSpeed(msg.speed);
+    });
   }
+
+  buildSpeed(0);
 });
