@@ -226,6 +226,11 @@ function tryStartClient(retry) {
 
 var last_command_time = 0;
 
+var channel_commands = {};
+bot_channels.forEach(function(c) {
+  channel_commands[c] = new Set();
+});
+
 // Called every time a message comes in
 function onMessageHandler (target, tags, msg, self) {
   if (self) { return; } // Ignore messages from the bot
@@ -246,6 +251,15 @@ function onMessageHandler (target, tags, msg, self) {
     return;
   }
 
+  let name = tags['display-name'];
+  // user can only send one command per command interval
+  if (channel_commands[target].has(name)) {
+    // REMOVE THIS LOGGING!
+    client.say(target, `@${tags['display-name']}: You have already entered a command!`);
+    return;
+  }
+  channel_commands[target].add(name);
+
   // const time = Date.now() / 1000.0;
 
   // command cooldown of 5 seconds
@@ -254,7 +268,7 @@ function onMessageHandler (target, tags, msg, self) {
 
   // only set the command time if we actually run a command
   // last_command_time = time;
-
+  
   // If the command is known, let's execute it
   if (processCommand(client, target, commandName)) {
     // client.say(target, `You rolled a ${num}`);
@@ -347,7 +361,8 @@ declareVoteType(VoteType.Throttle,
     let avg = data.values.reduce((a, b) => a + b) / data.values.length;
 
     client.say(channel, `Setting the throttle to ${avg}!`);
-    
+    graph.postCommand(channel, `Set Throttle to '${avg}'`);
+
     graph.updateSpeed(channel, avg);
     if (tmcc) {
       tmcc.write(`setThrottle ${channel_engine_ids[channel]} ${(avg / 200.0)}\r\n`);
@@ -366,6 +381,7 @@ declareVoteType(VoteType.Horn,
   // Category has won
   function(channel, data) {
     client.say(channel, "Honking the horn!");
+    graph.postCommand(channel, "Blow Horn");
 
     // if (tmcc) {
     //   tmcc.write(`blowHorn ${channel_engine_ids[channel]}\r\n`);
@@ -400,6 +416,7 @@ declareVoteType(VoteType.Bell,
 
     if (choice === "on") {
       client.say(channel, "Ringing the bell!");
+      graph.postCommand(channel, "Ring Bell");
 
       if (tmcc) {
         tmcc.write(`setBell ${channel_engine_ids[channel]} 1\r\n`);
@@ -407,6 +424,7 @@ declareVoteType(VoteType.Bell,
     }
     else {
       client.say(channel, "Turning off the bell!");
+      graph.postCommand(channel, "Bell Off");
 
       if (tmcc) {
         tmcc.write(`setBell ${channel_engine_ids[channel]} 0\r\n`);
@@ -429,6 +447,7 @@ declareVoteType(VoteType.Direction,
     let choice = mode(data.values);
 
     client.say(channel, `Setting the direction to ${choice}!`);
+    graph.postCommand(channel, `Set Direction to '${choice}'`);
 
     graph.updateSpeed(channel, 0);
     if (choice === "forward") {
@@ -475,6 +494,8 @@ declareVoteType(VoteType.Junction,
     let choice = mode(data.junction_votes[highest_id]);
 
     client.say(channel, `Setting junction ${highest_id} to ${choice}!`);
+    graph.postCommand(channel, `Set Junction '${highest_id}' to '${choice}'`);
+
     if (choice === "out") {
       if (tmcc) {
         tmcc.write(`setJunctionOut ${highest_id}\r\n`);
@@ -505,6 +526,10 @@ function addVote(channel, type, ...args) {
 
   let data = channel_vote_data[channel];
 
+  // vote added prematurely
+  if (!data.vote_data)
+    return;
+  
   vote_callbacks[type].process(channel, data.vote_data[type], args);
   data.vote_counts[type]++;
 }
@@ -513,6 +538,8 @@ function resetVotes() {
   bot_channels.forEach(function(c) {
     let vote_data = {};
     let vote_counts = {};
+    channel_commands[c] = new Set();
+
     for (const [key, value] of Object.entries(vote_callbacks)) {
       vote_data[key] = value.default();
       vote_counts[key] = 0;

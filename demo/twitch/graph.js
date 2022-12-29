@@ -95,5 +95,9 @@ module.exports = {
   updateSpeed: function(channel, data) {
     console.log("emit " + 'speed-update-' + channel.substring(1));
     io.emit('speed-update-' + channel.substring(1), { speed: data });
+  },
+  postCommand: function(channel, data) {
+    console.log("emit " + 'command-update-' + channel.substring(1));
+    io.emit('command-update-' + channel.substring(1), { time: new Date().toLocaleTimeString('en-US'), text: data });
   }
 };

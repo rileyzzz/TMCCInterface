@@ -62,6 +62,25 @@ function buildSpeed(speed) {
   $("#speed-label").text(speed.toString().padStart(3, '0'));
 }
 
+var commandParity = 0;
+function addCommand(cmd) {
+  let commands = $("#commands");
+  let time = $("<div class='command-time'></div>");
+  time.text(cmd.time + ":");
+
+  let text = $("<div class='command-details'></div>");
+  text.text(cmd.text);
+
+  let entry = $(`<div class='command-entry'></div>`);
+  entry.append(time);
+  entry.append(text);
+
+  if (commandParity++ % 2 == 0)
+    entry.addClass("command-parity");
+  
+  commands.append(entry);
+
+}
 
 $(document).ready(function () {
   listen_channel = document.twitch_channel;
@@ -105,4 +124,12 @@ $(document).ready(function () {
   }
 
   buildSpeed(0);
+
+  if ($("#commands").length) {
+    console.log("listen for " + 'commmand-update-' + listen_channel);
+    socket.on('command-update-' + listen_channel, function (msg) {
+      console.log(`receive command ${msg.text}`);
+      addCommand(msg);
+    });
+  }
 });
