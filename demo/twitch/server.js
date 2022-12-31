@@ -50,7 +50,8 @@ var bot_user = "";
 var bot_client_id = "";
 var bot_client_secret = "";
 var bot_channels = [];
-var cooldown_time = 5.0;
+var vote_time = 5.0;
+var dialog_cooldown_time = 5.0;
 var max_throttle = 200.0;
 
 for (let i = 0; i < args.length; i++) {
@@ -76,9 +77,13 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === "-channel" && i + 1 < args.length) {
     bot_channels = args[i + 1].split(",").map(s => s.trim());
   }
-  else if (args[i] === "-cooldown" && i + 1 < args.length) {
+  else if (args[i] === "-votetime" && i + 1 < args.length) {
     // cooldown time in seconds
-    cooldown_time = parseFloat(args[i + 1]);
+    vote_time = parseFloat(args[i + 1]);
+  }
+  else if (args[i] === "-dialogtime" && i + 1 < args.length) {
+    // cooldown time in seconds
+    dialog_cooldown_time = parseFloat(args[i + 1]);
   }
   else if (args[i] === "-maxthrottle" && i + 1 < args.length) {
     // cooldown time in seconds
@@ -224,7 +229,7 @@ function tryStartClient(retry) {
   });
 }
 
-var last_command_time = 0;
+var last_dialog_time = 0;
 
 var channel_commands = {};
 bot_channels.forEach(function(c) {
@@ -234,7 +239,7 @@ bot_channels.forEach(function(c) {
 // Called every time a message comes in
 function onMessageHandler (target, tags, msg, self) {
   if (self) { return; } // Ignore messages from the bot
-  
+
   // Remove whitespace from chat message
   const commandName = msg.trim();
 
@@ -252,9 +257,32 @@ function onMessageHandler (target, tags, msg, self) {
   }
 
   let name = tags['display-name'];
+
+  // dialog is handled separately - it has its own cooldown, separate from voting periods
+  if (commandName.startsWith("!dialog")) {
+    let args = commandName.split(" ");
+    if (args.length < 2)
+      return;
+    
+    const time = Date.now() / 1000.0;
+
+    if (args[0] === "!dialog" && time - last_dialog_time >= dialog_cooldown_time) {
+      if (processDialog(client, target, args[1])) {
+        last_dialog_time = time;
+      }
+      else {
+        // REMOVE THIS LOGGING?
+        client.say(target, `@${tags['display-name']}: Invalid dialog command!`);
+      }
+    }
+
+    return;
+  }
+
+
   // user can only send one command per command interval
   if (channel_commands[target].has(name)) {
-    // REMOVE THIS LOGGING!
+    // REMOVE THIS LOGGING?
     client.say(target, `@${tags['display-name']}: You have already entered a command!`);
     return;
   }
@@ -263,7 +291,7 @@ function onMessageHandler (target, tags, msg, self) {
   // const time = Date.now() / 1000.0;
 
   // command cooldown of 5 seconds
-  // if (time - last_command_time < cooldown_time)
+  // if (time - last_command_time < vote_time)
   //   return;
 
   // only set the command time if we actually run a command
@@ -283,7 +311,7 @@ function onConnectedHandler (addr, port) {
   // once connected, begin processing votes
   setInterval(function() {
     bot_channels.forEach(c => processVotes(c));
-  }, cooldown_time * 1000);
+  }, vote_time * 1000);
 
   setInterval(function() {
     bot_channels.forEach(c => updateGraph(c));
@@ -294,7 +322,7 @@ function processCommand(client, target, command) {
   let args = command.split(" ");
   if (args.length == 0)
     return false;
-  
+
   if (args[0] === "!throttle" && args.length > 1) {
     let throttleValue = parseInt(args[1]);
     if (!isNaN(throttleValue) && throttleValue >= 0) { //  && throttleValue <= 200
@@ -326,6 +354,118 @@ function processCommand(client, target, command) {
       addVote(target, VoteType.Junction, junctionId, junctionDir);
       return true;
     }
+  }
+  return false;
+}
+
+var dialogCommands = {
+  "conventional-shutdown":       0b00000001,
+  // "DC_SCENE_2_KEY_CONTEXT_DEPENDENT":    0b00000010,
+  // "DC_SCENE_7_KEY_CONTEXT_DEPENDENT":    0b00000011,
+  // "DC_SCENE_5_KEY_CONTEXT_DEPENDENT":    0b00000100,
+  "conventional-short-horn-trigger":  0b00000101,
+  "initial-engine-startup":     0b00000110,
+  "engineer-departure-denied":        0b00000111,
+  "engineer-departure-granted":       0b00001000,
+  "engineer-have-departed":           0b00001001,
+  "engineer-allclear":               0b00001010,
+  "tower-non-emg-stop":               0b00001011,
+  "tower-restricted-speed":           0b00001100,
+  "tower-slow-speed":                 0b00001101,
+  "tower-medium-speed":               0b00001110,
+  "tower-limited-speed":              0b00001111,
+  "tower-normal-speed":               0b00010000,
+  "tower-highball-speed":            0b00010001,
+  "engineer-arriving-soon":            0b00010010,
+  "engineer-have-arrived":             0b00010011,
+  "engineer-shutdown":               0b00010100,
+  "enginneer-identify":                0b00010101,
+  "engineer-ack-comm":                0b00010110,
+  "engineer-ack-speed-to-stop":       0b00010111,
+  "engineer-ack-speed-to-restricted": 0b00011000,
+  "engineer-ack-speed-to-slow":       0b00011001,
+  "engineer-ack-speed-to-medium":     0b00011010,
+  "engineer-ack-speed-to-limited":    0b00011011,
+  "engineer-ack-speed-to-normal":     0b00011100,
+  "engineer-ack-speed-to-highball":  0b00011101,
+  "engineer-context-dependent":       0b00011110,
+  "emergency-context-dependent":      0b00011111,
+  "tower-context-dependent":          0b00100000,
+  //DC_RESERVED2                        = 0b00100001,
+  "tower-departure-denied":           0b00100010,
+  "tower-departure-granted":          0b00100011,
+  "tower-have-departed":              0b00100100,
+  "tower-allclear":                  0b00100101,
+
+  "tower-arriving-soon":         0b00101101,
+  "tower-have-arrived":          0b00101110,
+  "tower-shutdown":             0b00101111,
+  "conductor-all-aboard":        0b00110000,
+  "engineer-ack-standing-by":    0b00110001,
+  "engineer-ack-cleared-to-go":  0b00110010,
+  "engineer-ack-clear-ahead":    0b00110011,
+  "engineer-ack-clear-inbound":  0b00110100,
+  "engineer-ack-welcome-back":   0b00110101,
+  "engineer-ack-identify-out":   0b00110110,
+
+  // DC_SCENE_2_CONTEXT_DEPENDANT      = 0b00110111,
+  // DC_SCENE_AUX1_2_CONTEXT_DEPENDANT = 0b00111000,
+  // DC_SCENE_7_CONTEXT_DEPENDANT      = 0b00111001,
+  // DC_SCENE_AUX1_7_CONTEXT_DEPENDANT = 0b00111010,
+  // DC_SCENE_5_CONTEXT_DEPENDANT      = 0b00111011,
+  // DC_SCENE_AUX1_5_CONTEXT_DEPENDANT = 0b00111100,
+
+  "engineer-speak-fuel-level":      0b00111101,
+  "engineer-speak-fuel-refill":   0b00111110,
+  "engineer-speak-speed":         0b00111111,
+  "engineer-speak-water-level":   0b01000000,
+  "engineer-speak-water-refill":  0b01000001,
+
+  // Doc 1.22 says nothing until 0x50, i think otherwise. 
+  "seq-control-disable":             0b01010000,
+  "seq-control-enable":              0b01010001,
+  "seq-control-cleared":             0b01010010,
+  "seq-control-have-departed":       0b01010011,
+  "seq-control-in-transit":          0b01010100,
+  "seq-control-max-speed":           0b01010101,
+  "seq-control-clear-ahead":         0b01010110,
+  "seq-control-random":              0b01010111,
+  "seq-control-arriving-short-trip": 0b01011000,
+  "seq-control-arriving-long-trip":  0b01011001,
+  // "seq-control-RESERVED":            0b01011010,
+  // "seq-control-RESERVED2":           0b01011011,
+  "seq-control-arrived-short-trip":  0b01011100,
+  "seq-control-arrived-long-trip":   0b01011101,
+  // "seq-control-RESERVED3":           0b01011110,
+  // "seq-control-RESERVED4":           0b01011111,
+
+  "soundcar-conductor-next-stop":      0b01101000,
+  "soundcar-conductor-watch-step":     0b01101001,
+  "soundcar-conductor-all-aboard":     0b01101010,
+  "soundcar-conductor-tickets-please": 0b01101011,
+  "soundcar-conductor-premature-stop": 0b01101100,
+  "soundcar-steward-welcome":          0b01101101,
+  "soundcar-steward-first-seating":    0b01101110,
+  "soundcar-steward-second-seating":   0b01101111,
+  "soundcar-steward-lounge-open":      0b01110000,
+  "soundcar-pa-train-arriving":        0b01110001,
+  "soundcar-pa-train-arrived":         0b01110010,
+  "soundcar-pa-train-boarding":        0b01110011,
+  "soundcar-pa-train-departing":       0b01110100,
+  "soundcar-startup":                  0b01110101,
+  "soundcar-shutdownn":                 0b01110110,
+};
+
+function processDialog(client, channel, dialog) {
+  if (dialog in dialogCommands) {
+    client.say(channel, `Playing dialog: ${dialog}`);
+    graph.postCommand(channel, `Play dialog: '${dialog}'`);
+
+    let value = dialogCommands[dialog];
+    if (tmcc) {
+      tmcc.write(`dialog ${channel_engine_ids[channel]} ${value}\r\n`);
+    }
+    return true;
   }
   return false;
 }
@@ -570,7 +710,7 @@ function processVotes(channel) {
   }
 
   if (highest == 0) {
-    // client.say(channel, "Debug: No votes recorded!");
+    client.say(channel, "Debug: No votes recorded!");
 
     resetVotes();
     return;

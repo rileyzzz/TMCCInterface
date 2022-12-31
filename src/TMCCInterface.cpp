@@ -1212,12 +1212,12 @@ bool TMCCInterface::EngineLocoRefuelSound(EngineHandle id)
   return SendEngineCommand(EngineCommand2(id, EC2_LOCOMOTIVE_REFUELING_SOUND));
 }
 
-bool TMCCInterface::EngineDialogCommand(EngineHandle id, int x)
+bool TMCCInterface::EngineDialogCommand(EngineHandle id, DialogCommandParams x)
 {
     return SendMultiWordCommand(MultiWordCommand(id, PI_RAILSOUNDS_DIALOG_TRIGGERS, x));
 }
 
-bool TMCCInterface::EngineEffectCommand(EngineHandle id, int x)
+bool TMCCInterface::EngineEffectCommand(EngineHandle id, EffectCommandParams x)
 {
     return SendMultiWordCommand(MultiWordCommand(id, PI_RAILSOUNDS_EFFECT_TRIGGERS, x));
 }

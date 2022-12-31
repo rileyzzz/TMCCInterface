@@ -137,7 +137,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   else */if (!strcmp(command, "setLegacy"))
   {
     int legacy;
-    if (sscanf(data, "%d", &legacy))
+    if (sscanf(data, "%d", &legacy) == 1)
     {
       s_legacy = legacy;
       printf("Set legacy to %d\n", legacy);
@@ -147,7 +147,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   {
     int engine;
     int input;
-    if (sscanf(data, "%d %d", &engine, &input))
+    if (sscanf(data, "%d %d", &engine, &input) == 2)
     {
       if (!s_debug)
         TMCCInterface::EngineNumericCommand(engine, input);
@@ -158,7 +158,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   {
     int engine;
     float throttle;
-    if (sscanf(data, "%d %f", &engine, &throttle))
+    if (sscanf(data, "%d %f", &engine, &throttle) == 2)
     {
       if (!s_debug)
       {
@@ -174,7 +174,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   {
     int engine;
     float brake;
-    if (sscanf(data, "%d %f", &engine, &brake))
+    if (sscanf(data, "%d %f", &engine, &brake) == 2)
     {
       if (!s_debug && !s_legacy)
         TMCCInterface::EngineSetBrakeLevel2(engine, (int)(brake * 8.0f));
@@ -185,7 +185,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   {
     int engine;
     int dir;
-    if (sscanf(data, "%d %d", &engine, &dir))
+    if (sscanf(data, "%d %d", &engine, &dir) == 2)
     {
       if (!s_debug)
         TMCCInterface::EngineSetDirection(engine, dir != 0 ? TMCC_FORWARD : TMCC_REVERSE);
@@ -197,7 +197,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   {
     int engine;
     int state;
-    if (sscanf(data, "%d %d", &engine, &state))
+    if (sscanf(data, "%d %d", &engine, &state) == 2)
     {
       if (!s_debug)
         TMCCInterface::EngineSetBell(engine, state != 0 ? TMCC_ON : TMCC_OFF);
@@ -208,7 +208,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   else if (!strcmp(command, "blowHorn"))
   {
     int engine;
-    if (sscanf(data, "%d", &engine))
+    if (sscanf(data, "%d", &engine) == 1)
     {
       if (!s_debug)
       {
@@ -223,7 +223,7 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   else if (!strcmp(command, "setJunctionOut"))
   {
     int junc;
-    if (sscanf(data, "%d", &junc))
+    if (sscanf(data, "%d", &junc) == 1)
     {
       if (!s_debug)
         TMCCInterface::SwitchThrowOut(junc);
@@ -234,12 +234,24 @@ static void ProcessTMCCCommand(const char* command, const char* data)
   else if (!strcmp(command, "setJunctionThrough"))
   {
     int junc;
-    if (sscanf(data, "%d", &junc))
+    if (sscanf(data, "%d", &junc) == 1)
     {
       if (!s_debug)
         TMCCInterface::SwitchThrowThrough(junc);
 
       printf("Set switch %d to through\n", junc);
+    }
+  }
+  else if (!strcmp(command, "dialog"))
+  {
+    int engine;
+    int dialog;
+    if (sscanf(data, "%d %d", &engine, &dialog) == 2)
+    {
+      if (!s_debug)
+        TMCCInterface::EngineDialogCommand(engine, (DialogCommandParams)dialog);
+
+      printf("Play dialog %d for engine %d\n", dialog, engine);
     }
   }
   else
