@@ -138,8 +138,8 @@ enum EngineCommand2Params : uint16
   EC2_NUMERIC_FLAG             = 0b100010000,
   EC2_NUMERIC_MASK             = 0b000001111,
   EC2_CREWTALK_SPEED_VAR       = 0b100010010, // just numeric 2
-  EC2_STATION_DINER_LIGHTS_ON  = 0b100011000, // just numeric 8
-  EC2_STATION_DINER_LIGHTS_OFF = 0b100011001, // just numeric 9
+  EC2_STATION_DINER_LIGHTS_OFF = 0b100011000, // just numeric 8
+  EC2_STATION_DINER_LIGHTS_ON  = 0b100011001, // just numeric 9
   //EC2_RESERVED                          = 0b100011010,
   EC2_FORWARD_DIRECTION_UNUSED = 0b100011011,
   EC2_BLOW_HORN_1              = 0b100011100,
