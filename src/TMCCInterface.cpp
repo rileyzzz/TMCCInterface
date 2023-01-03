@@ -439,6 +439,7 @@ enum AccessoryCommandParams : uint8
   AC_AUX_2_OPTION_2               = 0b01110,
   AC_AUX_2_ON                     = 0b01111,
   AC_NUMERIC_FLAG                 = 0b10000,
+  AC_NUMERIC_MASK                 = 0b01111,
 
   // extended commands
   EAC_ALL_OFF                     = 0b00000,
@@ -558,6 +559,94 @@ bool TMCCInterface::SendMultiWordCommand(const MultiWordCommand& cmd)
   //printf("address = %d , %#04x + %#04x + %#04x\n", address, word0, word1, word2);
 
   return WriteData(data, 9);
+}
+
+bool TMCCInterface::AccessoryAux1Off(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_1_OFF));
+}
+bool TMCCInterface::AccessoryAux1Option1(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_1_OPTION_1));
+}
+bool TMCCInterface::AccessoryAux1Option2(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_1_OPTION_2));
+}
+bool TMCCInterface::AccessoryAux1On(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_1_ON));
+}
+bool TMCCInterface::AccessoryAux2Off(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_2_OFF));
+}
+bool TMCCInterface::AccessoryAux2On(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_2_ON));
+}
+bool TMCCInterface::AccessoryAux2Option1(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_2_OPTION_1));
+}
+bool TMCCInterface::AccessoryAux2Option2(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, AC_AUX_2_OPTION_2));
+}
+
+bool TMCCInterface::AccessoryAllOn(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_EXTENDED, EAC_ALL_ON));
+}
+
+bool TMCCInterface::AccessoryAllOff(AccessoryHandle id)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_EXTENDED, EAC_ALL_OFF));
+}
+
+bool TMCCInterface::AccessorySetAddress(AccessoryHandle address)
+{
+  return SendTMCC1Command(AccessoryCommand(address, CT_EXTENDED, EAC_SET_ADDRESS));
+}
+
+bool TMCCInterface::AccessoryAssignAux1ToGroup(AccessoryHandle id, GroupHandle groupID)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_EXTENDED, (AccessoryCommandParams)(groupID | EAC_ASSIGN_AUX_1_TO_GROUP_FLAG)));
+}
+
+bool TMCCInterface::AccessoryAssignAux2ToGroup(AccessoryHandle id, GroupHandle groupID)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_EXTENDED, (AccessoryCommandParams)(groupID | EAC_ASSIGN_AUX_2_TO_GROUP_FLAG)));
+}
+
+bool TMCCInterface::AccessoryNumericCommand(AccessoryHandle id, uint8 cmd)
+{
+  return SendTMCC1Command(AccessoryCommand(id, CT_ACTION, (AccessoryCommandParams)(AC_NUMERIC_FLAG | (AC_NUMERIC_MASK & cmd))));
+}
+
+bool TMCCInterface::GroupOff(GroupHandle id)
+{
+  return SendTMCC1Command(GroupCommand(id, CT_ACTION, GC_GROUP_OFF));
+}
+
+bool TMCCInterface::GroupOn(GroupHandle id)
+{
+  return SendTMCC1Command(GroupCommand(id, CT_ACTION, GC_GROUP_ON));
+}
+
+bool TMCCInterface::GroupOption1(GroupHandle id)
+{
+  return SendTMCC1Command(GroupCommand(id, CT_ACTION, GC_OPTION_1));
+}
+
+bool TMCCInterface::GroupOption2(GroupHandle id)
+{
+  return SendTMCC1Command(GroupCommand(id, CT_ACTION, GC_OPTION_2));
+}
+
+bool TMCCInterface::GroupClear(GroupHandle id)
+{
+  return SendTMCC1Command(GroupCommand(id, CT_EXTENDED, GC_OPTION_1));
 }
 
 bool TMCCInterface::SwitchThrowThrough(SwitchHandle id)
