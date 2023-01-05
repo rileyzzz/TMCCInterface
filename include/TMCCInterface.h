@@ -396,6 +396,8 @@ enum LightingCommandParams : uint16
   LT_CAR_CABIN_LIGHT_AUTO         = 0b11111010
 };
 
+
+
 struct MultiWordCommand
 {
   TMCCAddress address;
@@ -503,6 +505,24 @@ public:
   TMCC_API static bool Init(int device);
   TMCC_API static void Shutdown();
 
+  // accessory commands
+  TMCC_API static bool AccessoryAux1Off(AccessoryHandle id);
+  TMCC_API static bool AccessoryAux1Option1(AccessoryHandle id);
+  TMCC_API static bool AccessoryAux1Option2(AccessoryHandle id);
+  TMCC_API static bool AccessoryAux1On(AccessoryHandle id);
+  TMCC_API static bool AccessoryAux2Off(AccessoryHandle id);
+  TMCC_API static bool AccessoryAux2On(AccessoryHandle id);
+  TMCC_API static bool AccessoryAux2Option1(AccessoryHandle id);
+  TMCC_API static bool AccessoryAux2Option2(AccessoryHandle id);
+  TMCC_API static bool AccessoryAllOn(AccessoryHandle id);
+  TMCC_API static bool AccessoryAllOff(AccessoryHandle id);
+  TMCC_API static bool AccessorySetAddress(AccessoryHandle address);
+  TMCC_API static bool AccessoryAssignAux1ToGroup(AccessoryHandle id,GroupHandle groupID);
+  TMCC_API static bool AccessoryAssignAux2ToGroup(AccessoryHandle id, GroupHandle groupID);
+  TMCC_API static bool AccessoryNumericCommand(AccessoryHandle id, uint8 cmd);
+
+
+
   // switch commands
   TMCC_API static bool SwitchThrowThrough(SwitchHandle id);
   TMCC_API static bool SwitchThrowOut(SwitchHandle id);
@@ -513,6 +533,16 @@ public:
   // route commands
   TMCC_API static bool RouteThrow(RouteHandle id);
   TMCC_API static bool RouteClear(RouteHandle id);
+
+  // group commands
+  TMCC_API static bool GroupOff(GroupHandle id);
+  TMCC_API static bool GroupOn(GroupHandle id);
+  TMCC_API static bool GroupOption1(GroupHandle id);
+  TMCC_API static bool GroupOption2(GroupHandle id);
+  TMCC_API static bool GroupClear(GroupHandle id);
+
+
+
 
   // engine or train commands
   //static bool EngineSetForwardDirection(TMCCAddress id);
