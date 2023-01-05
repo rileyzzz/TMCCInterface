@@ -646,7 +646,7 @@ bool TMCCInterface::GroupOption2(GroupHandle id)
 
 bool TMCCInterface::GroupClear(GroupHandle id)
 {
-  return SendTMCC1Command(GroupCommand(id, CT_EXTENDED, GC_OPTION_1));
+  return SendTMCC1Command(GroupCommand(id, CT_EXTENDED, EGC_GROUP_CLEAR));
 }
 
 bool TMCCInterface::SwitchThrowThrough(SwitchHandle id)
