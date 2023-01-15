@@ -710,7 +710,7 @@ function processVotes(channel) {
   }
 
   if (highest == 0) {
-    client.say(channel, "Debug: No votes recorded!");
+    // client.say(channel, "Debug: No votes recorded!");
 
     resetVotes();
     return;
