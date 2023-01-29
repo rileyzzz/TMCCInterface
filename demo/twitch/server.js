@@ -53,6 +53,7 @@ var bot_channels = [];
 var vote_time = 5.0;
 var dialog_cooldown_time = 5.0;
 var max_throttle = 200.0;
+var input_is_legacy = null;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "-engine" && i + 1 < args.length) {
@@ -94,6 +95,10 @@ for (let i = 0; i < args.length; i++) {
       max_throttle = 200;
     }
   }
+  else if (args[i] === "-legacy" && i + 1 < args.length) {
+    input_is_legacy = args[i + 1].split(",").map(s => parseInt(s.trim()));
+
+  }
 }
 
 if (!bot_user)
@@ -120,6 +125,22 @@ if (input_engine_ids.length == bot_channels.length) {
 else {
   console.error("Number of engine IDs doesn't match number of channels!");
 }
+
+if (input_is_legacy.length !== input_engine_ids.length) {
+  console.error("Number of engine IDs doesn't match number of -legacy!");
+  input_is_legacy = null;
+}
+
+if (input_is_legacy == null) {
+  input_is_legacy = [];
+  for (let i = 0; i < input_engine_ids.length; i++)
+    input_is_legacy[i] = true;
+}
+
+var engine_is_legacy = {};
+for (let i = 0; i < input_engine_ids.length; i++)
+  engine_is_legacy[input_engine_ids[i]] = input_is_legacy[i];
+
 
 var twitch = require('./twitch');
 
@@ -172,6 +193,14 @@ require('net').createServer(function (socket) {
   // socket.write('Hello\n');
   // socket.write('Hello 2\n');
 }).listen(tmcc_port);
+
+
+var is_currently_legacy = true;
+function checkLegacy(engine_id) {
+  let should_be_legacy = engine_is_legacy[engine_id];
+  if (should_be_legacy !== is_currently_legacy)
+    tmcc.write(`setLegacy ${should_be_legacy ? 1 : 0}\r\n`);
+}
 
 // process.on('uncaughtException', function (err) {
 //   console.error(err.stack);
@@ -463,6 +492,7 @@ function processDialog(client, channel, dialog) {
 
     let value = dialogCommands[dialog];
     if (tmcc) {
+      checkLegacy(channel_engine_ids[channel]);
       tmcc.write(`dialog ${channel_engine_ids[channel]} ${value}\r\n`);
     }
     return true;
@@ -505,6 +535,7 @@ declareVoteType(VoteType.Throttle,
 
     graph.updateSpeed(channel, avg);
     if (tmcc) {
+      checkLegacy(channel_engine_ids[channel]);
       tmcc.write(`setThrottle ${channel_engine_ids[channel]} ${(avg / 200.0)}\r\n`);
     }
   }
@@ -533,6 +564,7 @@ declareVoteType(VoteType.Horn,
     for (let i = 0; i < 5; i++) {
       setTimeout(function () {
         if (tmcc) {
+          checkLegacy(engineID);
           tmcc.write(`blowHorn ${engineID}\r\n`);
         }
 
@@ -559,6 +591,7 @@ declareVoteType(VoteType.Bell,
       graph.postCommand(channel, "Ring Bell");
 
       if (tmcc) {
+        checkLegacy(channel_engine_ids[channel]);
         tmcc.write(`setBell ${channel_engine_ids[channel]} 1\r\n`);
       }
     }
@@ -567,6 +600,7 @@ declareVoteType(VoteType.Bell,
       graph.postCommand(channel, "Bell Off");
 
       if (tmcc) {
+        checkLegacy(channel_engine_ids[channel]);
         tmcc.write(`setBell ${channel_engine_ids[channel]} 0\r\n`);
       }
     }
@@ -592,11 +626,13 @@ declareVoteType(VoteType.Direction,
     graph.updateSpeed(channel, 0);
     if (choice === "forward") {
       if (tmcc) {
+        checkLegacy(channel_engine_ids[channel]);
         tmcc.write(`setDirection ${channel_engine_ids[channel]} 1\r\n`);
       }
     }
     else {
       if (tmcc) {
+        checkLegacy(channel_engine_ids[channel]);
         tmcc.write(`setDirection ${channel_engine_ids[channel]} 0\r\n`);
       }
     }
