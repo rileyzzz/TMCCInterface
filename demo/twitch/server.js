@@ -6,6 +6,8 @@ var graph = require('./graph');
 
 // how frequently to update the graph
 const graph_update_interval = 0.5;
+
+// how many times to send a command (to prevent interference)
 const command_multiplicity = 5;
 
 const VoteType = {
@@ -127,7 +129,7 @@ else {
   console.error("Number of engine IDs doesn't match number of channels!");
 }
 
-if (input_is_legacy.length !== input_engine_ids.length) {
+if (input_is_legacy != null && input_is_legacy.length !== input_engine_ids.length) {
   console.error("Number of engine IDs doesn't match number of -legacy!");
   input_is_legacy = null;
 }
