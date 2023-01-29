@@ -6,6 +6,7 @@ var graph = require('./graph');
 
 // how frequently to update the graph
 const graph_update_interval = 0.5;
+const command_multiplicity = 5;
 
 const VoteType = {
   // Throttle: Symbol("throttle"),
@@ -201,6 +202,13 @@ function checkLegacy(engine_id) {
   if (should_be_legacy !== is_currently_legacy)
     tmcc.write(`setLegacy ${should_be_legacy ? 1 : 0}\r\n`);
 }
+
+function writeCommand(command) {
+  for (let i = 0; i < command_multiplicity; i++) {
+    tmcc.write(command);
+  }    
+}
+
 
 // process.on('uncaughtException', function (err) {
 //   console.error(err.stack);
@@ -493,7 +501,7 @@ function processDialog(client, channel, dialog) {
     let value = dialogCommands[dialog];
     if (tmcc) {
       checkLegacy(channel_engine_ids[channel]);
-      tmcc.write(`dialog ${channel_engine_ids[channel]} ${value}\r\n`);
+      writeCommand(`dialog ${channel_engine_ids[channel]} ${value}\r\n`);
     }
     return true;
   }
@@ -536,7 +544,7 @@ declareVoteType(VoteType.Throttle,
     graph.updateSpeed(channel, avg);
     if (tmcc) {
       checkLegacy(channel_engine_ids[channel]);
-      tmcc.write(`setThrottle ${channel_engine_ids[channel]} ${(avg / 200.0)}\r\n`);
+      writeCommand(`setThrottle ${channel_engine_ids[channel]} ${(avg / 200.0)}\r\n`);
     }
   }
 );
@@ -555,7 +563,7 @@ declareVoteType(VoteType.Horn,
     graph.postCommand(channel, "Blow Horn");
 
     // if (tmcc) {
-    //   tmcc.write(`blowHorn ${channel_engine_ids[channel]}\r\n`);
+    //   writeCommand(`blowHorn ${channel_engine_ids[channel]}\r\n`);
     // }
 
     // interval between blow horn commands
@@ -565,7 +573,7 @@ declareVoteType(VoteType.Horn,
       setTimeout(function () {
         if (tmcc) {
           checkLegacy(engineID);
-          tmcc.write(`blowHorn ${engineID}\r\n`);
+          writeCommand(`blowHorn ${engineID}\r\n`);
         }
 
       }, i * hornDelay);
@@ -592,7 +600,7 @@ declareVoteType(VoteType.Bell,
 
       if (tmcc) {
         checkLegacy(channel_engine_ids[channel]);
-        tmcc.write(`setBell ${channel_engine_ids[channel]} 1\r\n`);
+        writeCommand(`setBell ${channel_engine_ids[channel]} 1\r\n`);
       }
     }
     else {
@@ -601,7 +609,7 @@ declareVoteType(VoteType.Bell,
 
       if (tmcc) {
         checkLegacy(channel_engine_ids[channel]);
-        tmcc.write(`setBell ${channel_engine_ids[channel]} 0\r\n`);
+        writeCommand(`setBell ${channel_engine_ids[channel]} 0\r\n`);
       }
     }
   }
@@ -627,13 +635,13 @@ declareVoteType(VoteType.Direction,
     if (choice === "forward") {
       if (tmcc) {
         checkLegacy(channel_engine_ids[channel]);
-        tmcc.write(`setDirection ${channel_engine_ids[channel]} 1\r\n`);
+        writeCommand(`setDirection ${channel_engine_ids[channel]} 1\r\n`);
       }
     }
     else {
       if (tmcc) {
         checkLegacy(channel_engine_ids[channel]);
-        tmcc.write(`setDirection ${channel_engine_ids[channel]} 0\r\n`);
+        writeCommand(`setDirection ${channel_engine_ids[channel]} 0\r\n`);
       }
     }
   }
@@ -674,12 +682,12 @@ declareVoteType(VoteType.Junction,
 
     if (choice === "out") {
       if (tmcc) {
-        tmcc.write(`setJunctionOut ${highest_id}\r\n`);
+        writeCommand(`setJunctionOut ${highest_id}\r\n`);
       }
     }
     else {
       if (tmcc) {
-        tmcc.write(`setJunctionThrough ${highest_id}\r\n`);
+        writeCommand(`setJunctionThrough ${highest_id}\r\n`);
       }
     }
   }
