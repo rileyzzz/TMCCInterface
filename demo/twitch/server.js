@@ -9,7 +9,7 @@ const graph_update_interval = 0.5;
 
 // how many times to send a command (to prevent interference)
 const command_multiplicity = 8;
-const command_multiplicity_interval = 200;
+const command_multiplicity_interval = 100;
 
 const VoteType = {
   // Throttle: Symbol("throttle"),
