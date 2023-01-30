@@ -418,7 +418,7 @@ var dialogCommands = {
   "engineer-arriving-soon":            0b00010010,
   "engineer-have-arrived":             0b00010011,
   "engineer-shutdown":               0b00010100,
-  "enginneer-identify":                0b00010101,
+  "engineer-identify":                0b00010101,
   "engineer-ack-comm":                0b00010110,
   "engineer-ack-speed-to-stop":       0b00010111,
   "engineer-ack-speed-to-restricted": 0b00011000,
@@ -492,7 +492,7 @@ var dialogCommands = {
   "soundcar-pa-train-boarding":        0b01110011,
   "soundcar-pa-train-departing":       0b01110100,
   "soundcar-startup":                  0b01110101,
-  "soundcar-shutdownn":                 0b01110110,
+  "soundcar-shutdown":                 0b01110110,
 };
 
 function processDialog(client, channel, dialog) {
