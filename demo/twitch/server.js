@@ -8,7 +8,8 @@ var graph = require('./graph');
 const graph_update_interval = 0.5;
 
 // how many times to send a command (to prevent interference)
-const command_multiplicity = 5;
+const command_multiplicity = 8;
+const command_multiplicity_interval = 200;
 
 const VoteType = {
   // Throttle: Symbol("throttle"),
@@ -206,9 +207,12 @@ function checkLegacy(engine_id) {
 }
 
 function writeCommand(command) {
-  for (let i = 0; i < command_multiplicity; i++) {
-    tmcc.write(command);
-  }    
+  tmcc.write(command);
+  for (let i = 1; i < command_multiplicity; i++) {
+    setTimeout(function () {
+      tmcc.write(command);
+    }, i * command_multiplicity_interval);
+  }
 }
 
 
@@ -569,17 +573,18 @@ declareVoteType(VoteType.Horn,
     // }
 
     // interval between blow horn commands
-    const hornDelay = 200;
-    let engineID = channel_engine_ids[channel];
-    for (let i = 0; i < 5; i++) {
-      setTimeout(function () {
-        if (tmcc) {
-          checkLegacy(engineID);
-          writeCommand(`blowHorn ${engineID}\r\n`);
-        }
+    // const hornDelay = 200;
+    // let engineID = channel_engine_ids[channel];
+    // for (let i = 0; i < 5; i++) {
+    //   setTimeout(function () {
+    //     if (tmcc) {
+    //       checkLegacy(engineID);
+    //       writeCommand(`blowHorn ${engineID}\r\n`);
+    //     }
 
-      }, i * hornDelay);
-    }
+    //   }, i * hornDelay);
+    // }
+    writeCommand(`blowHorn ${engineID}\r\n`);
   }
 );
 
