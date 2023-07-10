@@ -66,7 +66,15 @@ int main(int argc, char* argv[])
   //socket creation
   tcp::socket socket(io_service);
   //connection
-  socket.connect(tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), PORT));
+  try
+  {
+    socket.connect(tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), PORT));
+  }
+  catch (const std::exception& ex)
+  {
+    printf("Failed to connect to port %d! Is the target application running? %s\n", PORT, ex.what());
+    return 1;
+  }
   printf("Connected to port %d\n", PORT);
 
   boost::system::error_code error;
