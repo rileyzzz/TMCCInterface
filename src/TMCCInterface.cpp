@@ -14,6 +14,11 @@ HANDLE serialPort;
 static std::vector<DeviceInfo> s_devices;
 static DeviceInfo* s_currentDevice;
 
+#ifdef WINDOWS
+static HANDLE s_serial = nullptr;
+#else // !WINDOWS
+
+#endif // !WINDOWS
 
 DeviceInfo::DeviceInfo()
   : m_portName{nullptr}
@@ -230,6 +235,7 @@ static std::vector<DeviceInfo> GetDevices()
   return devices;
 }
 
+
 int TMCCInterface::EnumerateDevices(DeviceInfo** devices)
 {
   s_devices = GetDevices();
@@ -238,7 +244,8 @@ int TMCCInterface::EnumerateDevices(DeviceInfo** devices)
   return s_devices.size();
 }
 
-bool TMCCInterface::Init(int device)
+
+bool TMCCInterface::Init(int device, bool pdi)
 {
   if (device < 0 || device >= s_devices.size())
     return false;
@@ -248,15 +255,84 @@ bool TMCCInterface::Init(int device)
   s_currentDevice = new DeviceInfo(s_devices[device]);
   printf("Initialized device %d [%s]\n", device, s_devices[device].GetFriendlyName());
 
+#ifdef WINDOWS
+  if (s_serial)
+  {
+    CloseHandle(s_serial);
+    s_serial = nullptr;
+  }
+
+  DCB dcb;
+  s_serial = CreateFile(
+    s_currentDevice->GetPortName(),
+    (pdi ? GENERIC_READ | GENERIC_WRITE : GENERIC_READ),
+    0,
+    NULL,
+    OPEN_EXISTING,
+    0,
+    NULL
+  );
+
+  if (!GetCommState(s_serial, &dcb))
+  {
+    delete s_currentDevice;
+    CloseHandle(s_serial);
+    printf("Failed to retrieve comm state!\n");
+    return false;
+  }
+
+  dcb.BaudRate = CBR_9600; //9600 Baud
+  dcb.ByteSize = 8; //8 data bits
+  dcb.Parity = NOPARITY; //no parity
+  dcb.StopBits = ONESTOPBIT; //1 stop
+  if (!SetCommState(s_serial, &dcb))
+  {
+    delete s_currentDevice;
+    CloseHandle(s_serial);
+    printf("Failed to set comm state!\n");
+    return false;
+  }
+#endif // WINDOWS
+
   return true;
 }
 
+
 void TMCCInterface::Shutdown()
 {
+#ifdef WINDOWS
+  if (s_serial)
+  {
+    CloseHandle(s_serial);
+    s_serial = nullptr;
+  }
+#endif // WINDOWS
+
   if (s_currentDevice)
     delete s_currentDevice;
   s_currentDevice = nullptr;
 }
+
+
+bool TMCCInterface::PollEvent(TMCCEvent* o_evt)
+{
+  if (!s_currentDevice)
+    return false;
+
+#ifdef WINDOWS
+  if (!s_serial)
+    return false;
+
+  DWORD bytesread;
+
+  // TODO: PDI
+  //ReadFile(s_serial, )
+  //bSucceeded = WriteFile(s_serial, pData, length, &byteswritten, NULL);
+#endif // WINDOWS
+
+  return false;
+}
+
 
 bool TMCCInterface::WriteData(ubyte* pData, int length)
 {
@@ -269,35 +345,12 @@ bool TMCCInterface::WriteData(ubyte* pData, int length)
   bool bSucceeded = false;
 
 #ifdef WINDOWS
-  DCB dcb;
+  if (!s_serial)
+    return false;
+
   DWORD byteswritten;
-  HANDLE hPort = CreateFile(
-    s_currentDevice->GetPortName(),
-    GENERIC_WRITE,
-    0,
-    NULL,
-    OPEN_EXISTING,
-    0,
-    NULL
-  );
 
-  if (!GetCommState(hPort, &dcb))
-  {
-    CloseHandle(hPort);
-    return false;
-  }
-  dcb.BaudRate = CBR_9600; //9600 Baud
-  dcb.ByteSize = 8; //8 data bits
-  dcb.Parity = NOPARITY; //no parity
-  dcb.StopBits = ONESTOPBIT; //1 stop
-  if (!SetCommState(hPort, &dcb))
-  {
-    CloseHandle(hPort);
-    return false;
-  }
-  bSucceeded = WriteFile(hPort, pData, length, &byteswritten, NULL);
-  CloseHandle(hPort); //close the handle
-
+  bSucceeded = WriteFile(s_serial, pData, length, &byteswritten, NULL);
 #endif // WINDOWS
 
   return bSucceeded;

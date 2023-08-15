@@ -496,14 +496,36 @@ private:
   friend class TMCCInterface;
 };
 
+enum EventType
+{
+  ET_SENSOR_TRACK
+};
+
+struct SensorData
+{
+
+};
+
+struct TMCCEvent
+{
+  EventType type;
+  union
+  {
+    SensorData sensor;
+  };
+};
+
 class TMCCInterface
 {
 public:
 
   TMCC_API static int EnumerateDevices(DeviceInfo** devices);
   
-  TMCC_API static bool Init(int device);
+  TMCC_API static bool Init(int device, bool pdi = false);
   TMCC_API static void Shutdown();
+
+  // Poll events from the serial interface.
+  TMCC_API static bool PollEvent(TMCCEvent* o_evt);
 
   // accessory commands
   TMCC_API static bool AccessoryAux1Off(AccessoryHandle id);
