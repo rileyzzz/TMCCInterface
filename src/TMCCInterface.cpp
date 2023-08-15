@@ -263,7 +263,7 @@ bool TMCCInterface::Init(int device, bool pdi)
   DCB dcb;
   s_serial = CreateFile(
     s_currentDevice->GetPortName(),
-    (pdi ? GENERIC_READ | GENERIC_WRITE : GENERIC_READ),
+    (pdi ? GENERIC_READ | GENERIC_WRITE : GENERIC_WRITE),
     0,
     NULL,
     OPEN_EXISTING,
