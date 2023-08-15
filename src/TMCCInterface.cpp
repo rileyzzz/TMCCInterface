@@ -6,8 +6,6 @@
 #include <devguid.h>
 #include <setupapi.h>
 
-HANDLE serialPort;
-
 #endif // WINDOWS
 #include <filesystem>
 
